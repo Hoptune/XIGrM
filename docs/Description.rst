@@ -88,4 +88,4 @@ useful, see Halo Analysis Module for details.
 
 Examples
 ----------
-Coming soon... For now, see `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ for details.
+See `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ for details.
