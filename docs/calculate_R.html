@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Calculating Radii Module &#8212; XIGrM  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Halo Analysis Module" href="halo_analysis.html" />
+    <link rel="prev" title="X-ray Properties Module" href="X_properties.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-modules.calculate_R">
+<span id="calculating-radii-module"></span><h1>Calculating Radii Module<a class="headerlink" href="#module-modules.calculate_R" title="Permalink to this headline">¶</a></h1>
+<p>This module contains codes for caluclating radii R200, 
+R500, etc (and corresponding mass) of halos.</p>
+<p>Based on Douglas Rennehan’s code on HaloAnalysis.</p>
+<dl class="function">
+<dt id="modules.calculate_R.get_radius">
+<code class="sig-prename descclassname">modules.calculate_R.</code><code class="sig-name descname">get_radius</code><span class="sig-paren">(</span><em class="sig-param">halo</em>, <em class="sig-param">overdensities=array([]</em>, <em class="sig-param">dtype=float64)</em>, <em class="sig-param">rho_crit=None</em>, <em class="sig-param">precision=0.01</em>, <em class="sig-param">rmax=None</em>, <em class="sig-param">cen=array([]</em>, <em class="sig-param">dtype=float64)</em>, <em class="sig-param">prop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/calculate_R.html#get_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.calculate_R.get_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate different radii of a given halo with a decreasing sphere method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>halo</strong></dt><dd><p>Halo to be calculated, SimSnap in pynbody. 
+Paramaters need to be in physical_units.</p>
+</dd>
+<dt><strong>overdensity</strong></dt><dd><p>Overdensity factor $Delta$s. Must be a 
+list!</p>
+</dd>
+<dt><strong>rho_crit</strong></dt><dd><p>Critical density of the universe at the 
+redshift of current SimSnap. Must be in 
+units of Msol/kpc**3.</p>
+</dd>
+<dt><strong>precision</strong></dt><dd><p>Precision for calculating radius.</p>
+</dd>
+<dt><strong>rmax</strong></dt><dd><p>The radius at which start using decreasing sphere 
+method. If 0, then use 2 * distance of 
+farthest particle. If set, must be in units of 
+kpc or convertible to kpc via pynbody.</p>
+</dd>
+<dt><strong>cen</strong></dt><dd><p>center coordinates of calculated halo. If not provided, 
+then will load from property dictionary or calculate 
+via pynbody.analysis.halo.center().</p>
+</dd>
+<dt><strong>prop</strong></dt><dd><p>halo.properties dictionary. If set to 0 then will 
+automatically load it. Only used for getting boxsize 
+and redshift.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>mass</dt><dd><p>Dict of masses of the halo within calculated radii.</p>
+</dd>
+<dt>radius</dt><dd><p>Dict of radii of the halo at given overdensities.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="modules.calculate_R.get_radius_bisection">
+<code class="sig-prename descclassname">modules.calculate_R.</code><code class="sig-name descname">get_radius_bisection</code><span class="sig-paren">(</span><em class="sig-param">halo</em>, <em class="sig-param">overdensities=array([]</em>, <em class="sig-param">dtype=float64)</em>, <em class="sig-param">rho_crit=0</em>, <em class="sig-param">precision=0.01</em>, <em class="sig-param">prop=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/calculate_R.html#get_radius_bisection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.calculate_R.get_radius_bisection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate different radii of a given halo with a 
+bisection method. This is a prototype without much 
+optimization. And you will need to modify the source 
+code to make it compatible with the module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>halo</strong></dt><dd><dl class="simple">
+<dt>Halo to be calculated, SimSnap in pynbody.</dt><dd><p>Paramaters need to be in physical_units.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>overdensity</strong></dt><dd><p>Overdensity factor $Delta$s.</p>
+</dd>
+<dt><strong>rho_crit</strong></dt><dd><p>Critical density of the universe at the
+redshift of current SimSnap. Must be in
+units of halo[‘mass’].units / 
+halo[‘pos’].units**3.</p>
+</dd>
+<dt><strong>precision</strong></dt><dd><p>Precision within which radii is calculated.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>mass</dt><dd><p>Dict of masses of the halo within calculated radii.</p>
+</dd>
+<dt>radius</dt><dd><p>Dict of radii of the halo at given overdensities.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">XIGrM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="prepare_pyatomdb.html">Pyatomdb Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cosmology.html">Cosmology Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gas_properties.html">Gas Properties Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="X_properties.html">X-ray Properties Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Calculating Radii Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="halo_analysis.html">Halo Analysis Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Description.html">How to Use</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="X_properties.html" title="previous chapter">X-ray Properties Module</a></li>
+      <li>Next: <a href="halo_analysis.html" title="next chapter">Halo Analysis Module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Zhiwei Shao and Douglas Rennehan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/calculate_R.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

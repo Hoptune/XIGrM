@@ -1,0 +1,829 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>modules.halo_analysis &#8212; XIGrM  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for modules.halo_analysis</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tools for analysing halo properties. </span>
+<span class="sd">Assume any necessary basic quantities is already </span>
+<span class="sd">prepared as the derived arrays of the snapshot.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">astropy.table</span> <span class="k">import</span> <span class="n">Table</span>
+<span class="kn">import</span> <span class="nn">pynbody</span> <span class="k">as</span> <span class="nn">pnb</span>
+<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">astroc</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">astrou</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">prepare_pyatomdb</span> <span class="k">as</span> <span class="n">ppat</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">calculate_R</span> <span class="k">as</span> <span class="n">cR</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">cosmology</span>
+<span class="kn">from</span> <span class="nn">.X_properties</span> <span class="k">import</span> <span class="n">cal_tspec</span><span class="p">,</span> <span class="n">cal_tweight</span>
+<span class="kn">import</span> <span class="nn">pyatomdb</span>
+
+<span class="c1"># The field here is only for initialization. If you </span>
+<span class="c1"># want to change the calculated quantities, you will </span>
+<span class="c1"># need to modify the calculating functions.</span>
+
+<span class="n">radius_field</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;vir&#39;</span><span class="p">,</span> <span class="s1">&#39;200&#39;</span><span class="p">,</span> <span class="s1">&#39;500&#39;</span><span class="p">,</span> <span class="s1">&#39;2500&#39;</span><span class="p">]</span>
+<span class="n">masstype</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;star&#39;</span><span class="p">,</span> <span class="s1">&#39;gas&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="s1">&#39;ism&#39;</span><span class="p">,</span> <span class="s1">&#39;cold&#39;</span><span class="p">,</span> <span class="s1">&#39;igrm&#39;</span><span class="p">]</span> <span class="c1"># used in Figure 8 of Liang et al.</span>
+<span class="n">radii_to_cal_sepcific_mass</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;200&#39;</span><span class="p">,</span> <span class="s1">&#39;500&#39;</span><span class="p">]</span>
+<span class="n">specific_mass_field</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">ra</span> <span class="ow">in</span> <span class="n">radii_to_cal_sepcific_mass</span><span class="p">:</span>
+    <span class="n">specific_mass_field</span> <span class="o">+=</span> <span class="p">[</span><span class="n">_masstype</span> <span class="o">+</span> <span class="n">ra</span> <span class="k">for</span> <span class="n">_masstype</span> <span class="ow">in</span> <span class="n">masstype</span><span class="p">]</span>
+<span class="n">mass_field</span> <span class="o">=</span> <span class="n">radius_field</span> <span class="o">+</span> <span class="n">specific_mass_field</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;total_star&#39;</span><span class="p">,</span> <span class="s1">&#39;self_star&#39;</span><span class="p">]</span><span class="c1">#, &#39;total_sfgas&#39;, &#39;self_sfgas&#39;]</span>
+<span class="n">temp_field</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;x_cont&#39;</span><span class="p">,</span> <span class="s1">&#39;mass&#39;</span><span class="p">,</span> <span class="s1">&#39;spec&#39;</span><span class="p">,</span> <span class="s1">&#39;spec_corr&#39;</span><span class="p">,</span> \
+                <span class="s1">&#39;x_corr&#39;</span><span class="p">,</span> <span class="s1">&#39;x_corr_cont&#39;</span><span class="p">,</span> <span class="s1">&#39;mass_corr&#39;</span><span class="p">]</span>
+<span class="n">entropy_field</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;500&#39;</span><span class="p">,</span> <span class="s1">&#39;2500&#39;</span><span class="p">]</span>
+<span class="n">luminosity_field</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;x_cont&#39;</span><span class="p">,</span> <span class="s1">&#39;xb&#39;</span><span class="p">,</span> <span class="s1">&#39;xb_cont&#39;</span><span class="p">]</span>
+<span class="c1"># _cont for only considering continuum emission, _corr for core-corrected (0.15*R500-R500)</span>
+<span class="c1"># xb for broad band X-ray (0.1-2.4 keV) in our case.</span>
+
+<span class="n">default_field</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;R&#39;</span><span class="p">:</span> <span class="n">radius_field</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span> <span class="n">mass_field</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">:</span> <span class="n">temp_field</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span> <span class="n">entropy_field</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="n">luminosity_field</span><span class="p">}</span>
+<span class="n">default_units</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;T&#39;</span><span class="p">:</span> <span class="s1">&#39;keV&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="s1">&#39;erg s**-1&#39;</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">:</span> <span class="s1">&#39;kpc&#39;</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span> <span class="s1">&#39;Msol&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span> <span class="s1">&#39;keV cm**2&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="halo_props"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props">[docs]</a><span class="k">class</span> <span class="nc">halo_props</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Systematically analyse the halo X-ray properties based </span>
+<span class="sd">    on other modules.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    -----------</span>
+<span class="sd">    datatype : str</span>
+<span class="sd">        A copy of the input type of simulation data.</span>
+<span class="sd">    catalogue_original : pynbody.halo.HaloCatalogue</span>
+<span class="sd">        The input halo catalogue.</span>
+<span class="sd">    length : length of the input catalogue.</span>
+<span class="sd">    host_id_of_top_level</span>
+<span class="sd">        How catalogue record &quot;hostHalo&quot; for those halos </span>
+<span class="sd">        without a host halo. Default is 0.</span>
+<span class="sd">    errorlist : list</span>
+<span class="sd">        Record when the host halo ID of a certain subhalo is not </span>
+<span class="sd">        recorded in the catalogue (weird but will happen in</span>
+<span class="sd">        ahf sometimes).</span>
+<span class="sd">    rho_crit</span>
+<span class="sd">        Critical density of the current snapshot in Msol kpc**-3.</span>
+<span class="sd">    ovdens</span>
+<span class="sd">        Virial overdensity factor $\Delta$ of the current snapshot.</span>
+<span class="sd">    dict : astropy.table.Table</span>
+<span class="sd">        A copy of the halo.properties dictionary but in a table form</span>
+<span class="sd">        to make future reference more convenient.</span>
+<span class="sd">    haloid</span>
+<span class="sd">        List of halo_id given by property dictionary.</span>
+<span class="sd">    IDlist</span>
+<span class="sd">        Table of halo_id and corresponding #ID given in the property </span>
+<span class="sd">        dictionary.</span>
+<span class="sd">    hostid</span>
+<span class="sd">        List of the halo_id of the host halo of each halo (originally </span>
+<span class="sd">        recorded in the property dictionary in the form of #ID).</span>
+<span class="sd">    new_catalogue : dict</span>
+<span class="sd">        The new catalogue which includes all the subhalo particles </span>
+<span class="sd">        in its host halo. The keys of the dictionary are the indexes of </span>
+<span class="sd">        halos in `catalogue_original`.</span>
+<span class="sd">    prop</span>
+<span class="sd">        Table of quantities corresponding to input field.</span>
+<span class="sd">    host_list</span>
+<span class="sd">        List of host halos.</span>
+<span class="sd">    tophost</span>
+<span class="sd">        halo_ids of the top-level host halo for each halo.</span>
+<span class="sd">    children : list of sets</span>
+<span class="sd">        Each set corresponds to the one-level down children of each halo.</span>
+<span class="sd">    galaxy_list</span>
+<span class="sd">        List of all galaxies (as long as n_star &gt; 0).</span>
+<span class="sd">    lumi_galaxy_list</span>
+<span class="sd">        List of all luminous galaxies (self_m_star &gt; galaxy_low_limit).</span>
+<span class="sd">    galaxies : list of sets</span>
+<span class="sd">        Each set corresponds to the embeded galaxies of each halo. All </span>
+<span class="sd">        the subhalos will not be considered and will have an empty set. </span>
+<span class="sd">        And for host halos it will include all the galaxies within it, </span>
+<span class="sd">        including the galaxies actually embedded in the subhalo (i.e., </span>
+<span class="sd">        the children of subhalo).</span>
+<span class="sd">    lumi_galaxies</span>
+<span class="sd">        Each set corresponds to the embeded luminous galaxies of each </span>
+<span class="sd">        halo. Same as `galaxies`, only care about host halo and include </span>
+<span class="sd">        all the luminous galaxies within.</span>
+<span class="sd">    n_lgal</span>
+<span class="sd">        Number of total luminous galaxies embedded in each halo. Again, </span>
+<span class="sd">        only care about host halos and the galaxies within subhalos </span>
+<span class="sd">        (i.e., subhalos themselves) will also be taken into account.</span>
+<span class="sd">    group_list</span>
+<span class="sd">        halo_id of the halo identified as group in the catalogue.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">halocatalogue</span><span class="p">,</span> <span class="n">datatype</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">default_field</span><span class="p">,</span> <span class="n">host_id_of_top_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Initialization routine.</span>
+
+<span class="sd">        Input</span>
+<span class="sd">        -----</span>
+<span class="sd">        ahfcatalogue : pynbody.halo.HaloCatalogue</span>
+<span class="sd">            Only has been tested for pynbody.halo.AHFCatalogue</span>
+<span class="sd">        field</span>
+<span class="sd">            Quantities to calculate. When changing specific_mass_field, </span>
+<span class="sd">            luminosity_field and temp_field, source codes must be modified.</span>
+<span class="sd">        datatype : str</span>
+<span class="sd">            What kind of simulation data you are dealing with. </span>
+<span class="sd">            Accepted datatype for now: &#39;gizmo_ahf&#39; and &#39;tipsy_ahf&#39;.</span>
+<span class="sd">        host_id_of_top_level</span>
+<span class="sd">            How catalogue record &quot;hostHalo&quot; for those halos </span>
+<span class="sd">            without a host halo. Default is 0.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="o">=</span><span class="n">datatype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">catalogue_original</span> <span class="o">=</span> <span class="n">halocatalogue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">catalogue_original</span><span class="p">)</span>
+        <span class="n">init_zeros</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host_id_of_top_level</span> <span class="o">=</span> <span class="n">host_id_of_top_level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errorlist</span> <span class="o">=</span> <span class="p">[{},</span> <span class="p">{},</span> <span class="p">{}]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho_crit</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">cosmology</span><span class="o">.</span><span class="n">rho_crit</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">catalogue_original</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Msol kpc**-3&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ovdens</span> <span class="o">=</span> <span class="n">cosmology</span><span class="o">.</span><span class="n">Delta_vir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">catalogue_original</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dict</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading properties... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">catalogue_original</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">properties</span>
+            <span class="n">hid</span> <span class="o">=</span> <span class="n">prop</span><span class="p">[</span><span class="s1">&#39;halo_id&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">hid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Attention! halo_id doesn</span><span class="se">\&#39;</span><span class="s1">t equal i !!!&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dict</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">haloid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;halo_id&#39;</span><span class="p">]</span>
+        <span class="n">IDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;#ID&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ID_list</span> <span class="o">=</span> <span class="n">Table</span><span class="p">([</span><span class="n">IDs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">haloid</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;#ID&#39;</span><span class="p">,</span> <span class="s1">&#39;halo_id&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ID_list</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="n">host_id_of_top_level</span><span class="p">,</span> <span class="n">host_id_of_top_level</span><span class="p">])</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">ID_list</span><span class="o">.</span><span class="n">add_index</span><span class="p">(</span><span class="s1">&#39;#ID&#39;</span><span class="p">)</span>
+
+        <span class="n">host_in_IDlist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;hostHalo&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID_list</span><span class="p">[</span><span class="s1">&#39;#ID&#39;</span><span class="p">])</span>
+        <span class="c1"># Some hostHalo id will not be listed in #ID list, this is probably due to AHF algorithm</span>
+        <span class="n">in_idx</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">host_in_IDlist</span><span class="p">)</span>
+        <span class="n">_not_in_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">host_in_IDlist</span><span class="p">)</span>
+        <span class="n">not_in_idx</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">_not_in_</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hostid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hostid</span><span class="p">[</span><span class="n">in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;hostHalo&#39;</span><span class="p">][</span><span class="n">in_idx</span><span class="p">]][</span><span class="s1">&#39;halo_id&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hostid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hostid</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">_not_in_</span><span class="p">)</span>
+        <span class="c1"># loc method enables using #ID as index</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">not_in_idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">not_in_idx</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errorlist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">haloid</span><span class="p">[</span><span class="n">error</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;hostHalo&#39;</span><span class="p">][</span><span class="n">error</span><span class="p">]</span>
+
+        <span class="c1"># prop initialization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prop</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">field_type</span> <span class="ow">in</span> <span class="n">default_units</span><span class="p">:</span>
+            <span class="n">init_prop_table</span> <span class="o">=</span> <span class="p">[</span><span class="n">init_zeros</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="n">field_type</span><span class="p">]))]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="n">field_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">init_prop_table</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">field</span><span class="p">[</span><span class="n">field_type</span><span class="p">])</span>
+            <span class="c1"># astropy.table.Table is only used for generating a structured array more conveniently</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="n">field_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="n">field_type</span><span class="p">],</span> <span class="n">units</span><span class="o">=</span><span class="n">default_units</span><span class="p">[</span><span class="n">field_type</span><span class="p">])</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_children</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_galaxy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_group</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_radii</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_temp</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_new_catalogue</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_center</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="halo_props.init_relationship"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.init_relationship">[docs]</a>    <span class="k">def</span> <span class="nf">init_relationship</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">galaxy_low_limit</span><span class="p">,</span> <span class="n">N_galaxy</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Get basic information regarding groups, hosts, children, etc.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_new_catalogue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_galaxy</span><span class="p">(</span><span class="n">g_low_limit</span> <span class="o">=</span> <span class="n">galaxy_low_limit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_group_list</span><span class="p">(</span><span class="n">N_galaxy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="halo_props.calcu_radii_masses"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.calcu_radii_masses">[docs]</a>    <span class="k">def</span> <span class="nf">calcu_radii_masses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">halo_id_list</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">rdict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span> <span class="n">rmax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate radii (Rvir, R200, etc) and corresponding masses.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        halo_id_list</span>
+<span class="sd">            List of halo_ids to calculate radii and masses. </span>
+<span class="sd">            If set to None, then will use self.group_list.</span>
+<span class="sd">        rdict</span>
+<span class="sd">            names and values for overdensity factors. Default is: </span>
+<span class="sd">            {&#39;vir&#39;: self.ovdens, &#39;200&#39;: 200, &#39;500&#39;: 500, &#39;2500&#39;: 2500}</span>
+<span class="sd">        precision</span>
+<span class="sd">            Precision for calculate radius. See get_index() in </span>
+<span class="sd">            calculate_R.py documentation for detail.</span>
+<span class="sd">        rmax</span>
+<span class="sd">            Maximum value for the shrinking sphere method. See </span>
+<span class="sd">            get_index() in calculate_R.py documentation for detail.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">halo_id_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_group</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_group_list (or init_relationship) first!&#39;</span><span class="p">)</span>
+            <span class="n">halo_id_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_center</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_center first!&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">rdict</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rdict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;vir&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ovdens</span><span class="p">,</span> <span class="s1">&#39;200&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s1">&#39;500&#39;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span> <span class="s1">&#39;2500&#39;</span><span class="p">:</span> <span class="mi">2500</span><span class="p">}</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">t2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">list_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">halo_id_list</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculating radii and masses... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">, time: </span><span class="se">\</span>
+<span class="s1">                        </span><span class="si">{:.5f}</span><span class="s1">s&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">list_length</span><span class="p">,</span> <span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">MassRadii</span> <span class="o">=</span> <span class="n">cR</span><span class="o">.</span><span class="n">get_radius</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> \
+                    <span class="n">overdensities</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">rdict</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">rho_crit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rho_crit</span><span class="p">,</span> \
+                        <span class="n">prop</span><span class="o">=</span><span class="n">prop</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">,</span> <span class="n">cen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">rmax</span><span class="o">=</span><span class="n">rmax</span><span class="p">,</span> <span class="n">posformat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">rdict</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">MassRadii</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">rdict</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">MassRadii</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">rdict</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_radii</span> <span class="o">=</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="halo_props.calcu_specific_masses"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.calcu_specific_masses">[docs]</a>    <span class="k">def</span> <span class="nf">calcu_specific_masses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">halo_id_list</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> \
+                <span class="n">calcu_field</span><span class="o">=</span><span class="n">radii_to_cal_sepcific_mass</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate some specific masses, such as baryon, IGrM, etc.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        halo_id_list</span>
+<span class="sd">            List of halo_ids to calculate masses. </span>
+<span class="sd">            If set to None, then will use self.group_list.</span>
+<span class="sd">        calcu_field</span>
+<span class="sd">            Radii to calculate specific masses within.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">halo_id_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_group</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_group_list (or init_relationship) first!&#39;</span><span class="p">)</span>
+            <span class="n">halo_id_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_radii</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_radii_masses first!&#39;</span><span class="p">)</span>
+        
+        <span class="n">list_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">halo_id_list</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculating specific masses... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">list_length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">halo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">transformation</span><span class="o">.</span><span class="n">inverse_translate</span><span class="p">(</span><span class="n">halo</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">tx</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">calcu_field</span><span class="p">:</span>
+                    <span class="c1"># Apply filters</span>
+                    <span class="n">subsim</span> <span class="o">=</span> <span class="n">halo</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">Sphere</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="s1">&#39;kpc&#39;</span><span class="p">))]</span>
+                    <span class="n">cold_diffuse_gas</span> <span class="o">=</span> <span class="n">subsim</span><span class="o">.</span><span class="n">gas</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">LowPass</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;5e5 K&#39;</span><span class="p">)</span> <span class="o">&amp;</span> \
+                            <span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">LowPass</span><span class="p">(</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;0.13 cm**-3&#39;</span><span class="p">)]</span>
+                    <span class="n">ISM</span> <span class="o">=</span> <span class="n">subsim</span><span class="o">.</span><span class="n">gas</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">HighPass</span><span class="p">(</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;0.13 cm**-3&#39;</span><span class="p">)]</span>
+                    <span class="n">hot_diffuse_gas_</span> <span class="o">=</span> <span class="n">subsim</span><span class="o">.</span><span class="n">gas</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">HighPass</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;5e5 K&#39;</span><span class="p">)</span> <span class="o">&amp;</span> \
+                            <span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">LowPass</span><span class="p">(</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;0.13 cm**-3&#39;</span><span class="p">)]</span>
+                    
+                    <span class="c1"># Calculate masses</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;star&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">subsim</span><span class="o">.</span><span class="n">star</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;gas&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">subsim</span><span class="o">.</span><span class="n">gas</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;bar&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;star&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> \
+                                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;gas&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;ism&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ISM</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;cold&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cold_diffuse_gas</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> \
+                                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;ism&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;igrm&#39;</span> <span class="o">+</span> <span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="halo_props.calcu_temp_lumi"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.calcu_temp_lumi">[docs]</a>    <span class="k">def</span> <span class="nf">calcu_temp_lumi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cal_file</span><span class="p">,</span> <span class="n">halo_id_list</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> \
+                    <span class="n">core_corr_factor</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">calcu_field</span><span class="o">=</span><span class="s1">&#39;500&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate all the temperatures and luminosities listed in</span>
+<span class="sd">        temp_field and luminosity_field. </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        cal_file</span>
+<span class="sd">            Calibration file used for calculating Tspec.</span>
+<span class="sd">        halo_id_list</span>
+<span class="sd">            List of halo_ids to calculate temperatures </span>
+<span class="sd">            and luminosities. If set to None, then will use </span>
+<span class="sd">            self.group_list.</span>
+<span class="sd">        core_corr_factor</span>
+<span class="sd">            Inner radius for calculating core-corrected </span>
+<span class="sd">            temperatures. Gas particles within </span>
+<span class="sd">            (core_corr_factor*R, R) will be used for calculation.</span>
+<span class="sd">        calcu_field</span>
+<span class="sd">            Radius to calculate temperatures and luminosities </span>
+<span class="sd">            within. Must be in radius_field. Default: R_500.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">halo_id_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_group</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_group_list (or init_relationship) first!&#39;</span><span class="p">)</span>
+            <span class="n">halo_id_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_radii</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_radii_masses first!&#39;</span><span class="p">)</span>
+        
+        <span class="n">list_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">halo_id_list</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculating temperatures and luminosities... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span>\
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">list_length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">halo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">calcu_field</span><span class="p">]</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="s1">&#39;kpc&#39;</span><span class="p">)</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">transformation</span><span class="o">.</span><span class="n">inverse_translate</span><span class="p">(</span><span class="n">halo</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">tx</span><span class="p">:</span>
+                <span class="n">subsim</span> <span class="o">=</span> <span class="n">halo</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">Sphere</span><span class="p">(</span><span class="n">R</span><span class="p">)]</span>
+                <span class="n">hot_diffuse_gas_</span> <span class="o">=</span> <span class="n">subsim</span><span class="o">.</span><span class="n">gas</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">HighPass</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;5e5 K&#39;</span><span class="p">)</span> <span class="o">&amp;</span> \
+                            <span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">LowPass</span><span class="p">(</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;0.13 cm**-3&#39;</span><span class="p">)]</span>
+                <span class="c1"># cal_tweight can return the sum of weight_type at the same time.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">][</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">cal_tweight</span><span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;Lx&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;x_cont&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">][</span><span class="s1">&#39;x_cont&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">cal_tweight</span><span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;Lx_cont&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;mass&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">_</span><span class="o">=</span> <span class="n">cal_tweight</span><span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;mass&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;spec&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="n">cal_tspec</span><span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">,</span> \
+                                <span class="n">cal_f</span><span class="o">=</span><span class="n">cal_file</span><span class="p">,</span> <span class="n">datatype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">),</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;keV&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">][</span><span class="s1">&#39;xb&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="s1">&#39;Lxb&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">][</span><span class="s1">&#39;xb_cont&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="s1">&#39;Lxb_cont&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+                <span class="c1"># Core-corrected temperatures:</span>
+                <span class="c1"># Filter:</span>
+                <span class="n">corr_hot_</span> <span class="o">=</span> <span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="o">~</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">Sphere</span><span class="p">(</span><span class="n">core_corr_factor</span><span class="o">*</span><span class="n">R</span><span class="p">)]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;spec_corr&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="n">cal_tspec</span><span class="p">(</span><span class="n">corr_hot_</span><span class="p">,</span> \
+                                <span class="n">cal_f</span><span class="o">=</span><span class="n">cal_file</span><span class="p">,</span> <span class="n">datatype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">),</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;keV&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;x_corr&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cal_tweight</span><span class="p">(</span><span class="n">corr_hot_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;Lx&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;x_corr_cont&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> \
+                                        <span class="n">cal_tweight</span><span class="p">(</span><span class="n">corr_hot_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;Lx_cont&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;mass_corr&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cal_tweight</span><span class="p">(</span><span class="n">corr_hot_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;mass&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_temp</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="halo_props.calcu_entropy"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.calcu_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">calcu_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cal_file</span><span class="p">,</span> <span class="n">halo_id_list</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> \
+                <span class="n">calcu_field</span><span class="o">=</span><span class="n">entropy_field</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;kpc&#39;</span><span class="p">)):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate all entropy within a thin spherical shell </span>
+<span class="sd">        centered at halo.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        cal_file</span>
+<span class="sd">            Calibration file used for calculating Tspec.</span>
+<span class="sd">        halo_id_list</span>
+<span class="sd">            List of halo_ids to calculate entropies. </span>
+<span class="sd">            If set to None, then will use self.group_list.</span>
+<span class="sd">        calcu_field</span>
+<span class="sd">            Radii of the thin shell to calculate entropies.</span>
+<span class="sd">        thickness</span>
+<span class="sd">            Thickness of the spherical shell.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">halo_id_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_group</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_group_list (or init_relationship) first!&#39;</span><span class="p">)</span>
+            <span class="n">halo_id_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_radii</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_radii_masses first!&#39;</span><span class="p">)</span>
+
+        <span class="n">list_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">halo_id_list</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculating temperatures and luminosities... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span>\
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">list_length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">halo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">transformation</span><span class="o">.</span><span class="n">inverse_translate</span><span class="p">(</span><span class="n">halo</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">tx</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">calcu_field</span><span class="p">:</span>
+                    <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="s1">&#39;kpc&#39;</span><span class="p">)</span>
+                    <span class="n">subgas</span> <span class="o">=</span> <span class="n">halo</span><span class="o">.</span><span class="n">gas</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">Annulus</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">thickness</span> <span class="o">+</span> <span class="n">R</span><span class="p">)]</span>
+                    <span class="n">hot_diffuse_gas_</span> <span class="o">=</span> <span class="n">subgas</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">HighPass</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;5e5 K&#39;</span><span class="p">)</span> \
+                            <span class="o">&amp;</span> <span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">LowPass</span><span class="p">(</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;0.13 cm**-3&#39;</span><span class="p">)]</span>
+                    <span class="n">tempTspec</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="n">cal_tspec</span><span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">,</span> \
+                            <span class="n">cal_f</span><span class="o">=</span><span class="n">cal_file</span><span class="p">,</span> <span class="n">datatype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">),</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;keV&#39;</span><span class="p">)</span>
+                    <span class="n">avg_ne</span> <span class="o">=</span> <span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="s1">&#39;ne&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> \
+                            <span class="o">/</span> <span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">][</span><span class="n">r</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">tempTspec</span><span class="o">/</span><span class="p">(</span><span class="n">avg_ne</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="s1">&#39;cm**-3&#39;</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="halo_props.savedata"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.savedata">[docs]</a>    <span class="k">def</span> <span class="nf">savedata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">field</span> <span class="o">=</span> <span class="n">default_field</span><span class="p">,</span> <span class="n">halo_id_list</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">units</span><span class="o">=</span><span class="n">default_units</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Save the data in hdf5 format. Will save halo_id_list </span>
+<span class="sd">        (key: &#39;halo_id&#39;) and the quantities listed in field.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        filename</span>
+<span class="sd">            Filename of the hdf5 file.</span>
+<span class="sd">        field</span>
+<span class="sd">            Type of information to save.</span>
+<span class="sd">        halo_id_list</span>
+<span class="sd">            List of halo_ids to save.If set to None, </span>
+<span class="sd">            then will use self.group_list.</span>
+<span class="sd">        units</span>
+<span class="sd">            Convert the data into specified inits and save.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">halo_id_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">halo_id_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;halo_id&quot;</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">halo_id_list</span><span class="p">)</span>
+            <span class="n">dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;Description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;halo_ids of halos saved in this file.&#39;</span>
+            <span class="n">dataset2</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;N_lgal&quot;</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_lgal</span><span class="p">[</span><span class="n">halo_id_list</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">dataset2</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;Description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Number of luminous galaxies&#39;</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">field</span><span class="p">:</span>
+                <span class="n">grp</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+                <span class="n">infos</span> <span class="o">=</span> <span class="n">field</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infos</span><span class="p">:</span>
+                    <span class="n">data_to_save</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="n">attr</span><span class="p">][</span><span class="n">info</span><span class="p">][</span><span class="n">halo_id_list</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="n">data_to_save</span><span class="o">.</span><span class="n">convert_units</span><span class="p">(</span><span class="n">default_units</span><span class="p">[</span><span class="n">attr</span><span class="p">])</span>
+                    <span class="n">dset</span> <span class="o">=</span> <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data_to_save</span><span class="p">)</span>
+                    <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_to_save</span><span class="o">.</span><span class="n">units</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="halo_props.get_children"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.get_children">[docs]</a>    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Generate list of children (subhalos) for each halo.</span>
+<span class="sd">        Subhalo itself can also have children. And this list </span>
+<span class="sd">        will not contain &quot;grandchildren&quot; (i.e., the children </span>
+<span class="sd">        of children).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tophost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">haloid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="c1">#j = i + 1</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">hostID</span> <span class="o">=</span> <span class="n">prop</span><span class="p">[</span><span class="s1">&#39;hostHalo&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">errorlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errorlist</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hostID</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">hostID</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">host_id_of_top_level</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">host_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tophost</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">hostID</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Make sure you</span><span class="se">\&#39;</span><span class="s1">ve used the correct host ID of the top-level halos!&#39;</span><span class="p">)</span>
+                    <span class="n">host_haloid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">hostID</span><span class="p">][</span><span class="s1">&#39;halo_id&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">host_haloid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                    <span class="n">temphost</span> <span class="o">=</span> <span class="n">j</span>
+                    <span class="k">while</span> <span class="n">temphost</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">temphost</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="n">temphost2</span> <span class="o">=</span> <span class="n">temphost</span>
+                        <span class="n">temphost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostid</span><span class="p">[</span><span class="n">temphost</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tophost</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">temphost2</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errorlist</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hostID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_children</span> <span class="o">=</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="halo_props.get_new_catalogue"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.get_new_catalogue">[docs]</a>    <span class="k">def</span> <span class="nf">get_new_catalogue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Generate a new catalogue based on catalogue_original, </span>
+<span class="sd">        the new catalogue will include all the subhalo particles </span>
+<span class="sd">        in its host halo.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_children</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_children first!&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">haloid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Generating new catalogue... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">catalogue_original</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">union_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">catalogue_original</span><span class="p">,</span> <span class="n">union_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_new_catalogue</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="halo_props.get_galaxy"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.get_galaxy">[docs]</a>    <span class="k">def</span> <span class="nf">get_galaxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">g_low_limit</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Generate list of galaxies for each host halo. The subsubhalo </span>
+<span class="sd">        will also be included in the hosthalo galaxy list. And it won&#39;t </span>
+<span class="sd">        generate list for the subhalos even if there are galaxies within.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_children</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_children first!&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_new_catalogue</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_new_catalogue first!&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">galaxy_list</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># List of all galaxies (as long as n_star &gt; 0).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lumi_galaxy_list</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># List of all luminous galaxies (self_m_star &gt; galaxy_low_limit).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">galaxies</span> <span class="o">=</span> <span class="p">[</span><span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lumi_galaxies</span> <span class="o">=</span> <span class="p">[</span><span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_lgal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span> <span class="c1"># Number of total luminous galaxies embedded in each host halo.</span>
+        <span class="c1"># The galaxies within subhalos (i.e., subhalos themselves) will also be taken into account.</span>
+        
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">haloid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculating total stellar masses... Halo: </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;total_star&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">star</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="c1">#sf_gas = self.new_catalogue[j].gas[pnb.filt.LowPass(&#39;temp&#39;, &#39;3e4 K&#39;)]</span>
+            <span class="c1"># sf_gas = self.new_catalogue[j].gas[pnb.filt.HighPass(&#39;nh&#39;, &#39;0.13 cm**-3&#39;)]</span>
+            <span class="c1">#self.prop[&#39;M&#39;][&#39;total_sfgas&#39;][i] = sf_gas[&#39;mass&#39;].sum()</span>
+            <span class="c1"># sf_gas, i.e., star forming gas, is used in the definition of resolved galaxies in Liang&#39;s Figure2.</span>
+            <span class="c1"># But seems that Liang didn&#39;t plot Figure 2 using the concept of resolved galaxies.</span>
+        <span class="n">low_limit</span> <span class="o">=</span> <span class="n">g_low_limit</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;total_star&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">haloid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Identifying galaxies... Halo: </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">children_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">children_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">self_Mstar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;total_star&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                <span class="c1">#self_Msfgas = self.prop[&#39;M&#39;][&#39;total_sfgas&#39;][i]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">children_union</span> <span class="o">=</span> <span class="n">get_union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">children_list</span><span class="p">))</span>
+                <span class="c1">#sf_gas_union = children_union.gas[pnb.filt.LowPass(&#39;temp&#39;, &#39;3e4 K&#39;)]</span>
+                <span class="c1"># sf_gas_union = children_union.gas[pnb.filt.HighPass(&#39;nh&#39;, &#39;0.13 cm**-3&#39;)]</span>
+                <span class="n">self_Mstar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;total_star&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">children_union</span><span class="o">.</span><span class="n">star</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="c1">#self_Msfgas = self.prop[&#39;M&#39;][&#39;total_sfgas&#39;][i] - sf_gas_union[&#39;mass&#39;].sum()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;self_star&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">self_Mstar</span>
+            <span class="c1"># self.prop[&#39;M&#39;][&#39;self_sfgas&#39;][i] = self_Msfgas</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">self_Mstar</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span><span class="c1"># + self_Msfgas &gt; low_limit:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">galaxy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                    <span class="n">temp_tophost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tophost</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">galaxies</span><span class="p">[</span><span class="n">temp_tophost</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+        
+                    <span class="k">if</span> <span class="n">self_Mstar</span> <span class="o">&gt;</span> <span class="n">low_limit</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">lumi_galaxy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">n_lgal</span><span class="p">[</span><span class="n">temp_tophost</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">lumi_galaxies</span><span class="p">[</span><span class="n">temp_tophost</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errorlist</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;hostHalo&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_galaxy</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="halo_props.get_group_list"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.get_group_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_group_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N_galaxy</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        halo_id of the halo identified as group in the catalogue. </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        N_galaxy : int</span>
+<span class="sd">            Number of luminous galaxies above which host halos </span>
+<span class="sd">            are considered as groups.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_galaxy</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_galaxy first!&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_lgal</span> <span class="o">&gt;=</span> <span class="n">N_galaxy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_group</span> <span class="o">=</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="halo_props.calcu_tx_lx"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.calcu_tx_lx">[docs]</a>    <span class="k">def</span> <span class="nf">calcu_tx_lx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">halo_id_list</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> \
+                    <span class="n">core_corr_factor</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">calcu_field</span><span class="o">=</span><span class="s1">&#39;500&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate X-ray luminosities and emission weighted </span>
+<span class="sd">        temperatures listed in temp_field and luminosity_field. </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        halo_id_list</span>
+<span class="sd">            List of halo_ids to calculate temperatures on. </span>
+<span class="sd">            If set to None, then will use self.group_list.</span>
+<span class="sd">        core_corr_factor</span>
+<span class="sd">            Inner radius for calculating core-corrected </span>
+<span class="sd">            temperatures. Gas particles within </span>
+<span class="sd">            (core_corr_factor*R, R) will be used for calculation.</span>
+<span class="sd">        calcu_field</span>
+<span class="sd">            Radius to calculate temperatures and luminosities </span>
+<span class="sd">            within. Must be in radius_field. Default: R_500.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">halo_id_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_group</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_group_list (or init_relationship) first!&#39;</span><span class="p">)</span>
+            <span class="n">halo_id_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_radii</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_radii_masses first!&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_new_catalogue</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_new_catalogue first!&#39;</span><span class="p">)</span>
+        
+        <span class="n">list_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">halo_id_list</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculating temperatures and luminosities... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span>\
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">list_length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">halo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">calcu_field</span><span class="p">]</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="s1">&#39;kpc&#39;</span><span class="p">)</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">transformation</span><span class="o">.</span><span class="n">inverse_translate</span><span class="p">(</span><span class="n">halo</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">tx</span><span class="p">:</span>
+                <span class="n">subsim</span> <span class="o">=</span> <span class="n">halo</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">Sphere</span><span class="p">(</span><span class="n">R</span><span class="p">)]</span>
+                <span class="n">hot_diffuse_gas_</span> <span class="o">=</span> <span class="n">subsim</span><span class="o">.</span><span class="n">gas</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">HighPass</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;5e5 K&#39;</span><span class="p">)</span> <span class="o">&amp;</span> \
+                            <span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">LowPass</span><span class="p">(</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;0.13 cm**-3&#39;</span><span class="p">)]</span>
+                <span class="c1"># cal_tweight can return the sum of weight_type at the same time.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">][</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">cal_tweight</span><span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;Lx&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;x_cont&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">][</span><span class="s1">&#39;x_cont&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">cal_tweight</span><span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;Lx_cont&#39;</span><span class="p">)</span>
+
+                <span class="c1"># Core-corrected temperatures:</span>
+                <span class="c1"># Filter:</span>
+                <span class="n">corr_hot_</span> <span class="o">=</span> <span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="o">~</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">Sphere</span><span class="p">(</span><span class="n">core_corr_factor</span><span class="o">*</span><span class="n">R</span><span class="p">)]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;x_corr&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cal_tweight</span><span class="p">(</span><span class="n">corr_hot_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;Lx&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;x_corr_cont&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> \
+                                        <span class="n">cal_tweight</span><span class="p">(</span><span class="n">corr_hot_</span><span class="p">,</span> <span class="n">weight_type</span><span class="o">=</span><span class="s1">&#39;Lx_cont&#39;</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="halo_props.calcu_tspec"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.calcu_tspec">[docs]</a>    <span class="k">def</span> <span class="nf">calcu_tspec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cal_file</span><span class="p">,</span> <span class="n">halo_id_list</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> \
+                    <span class="n">core_corr_factor</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">calcu_field</span><span class="o">=</span><span class="s1">&#39;500&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate spectroscopic temperatures based on Douglas&#39;s </span>
+<span class="sd">        pytspec module.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        cal_file</span>
+<span class="sd">            Calibration file used for calculating Tspec.</span>
+<span class="sd">        halo_id_list</span>
+<span class="sd">            List of halo_ids to calculate temperatures and </span>
+<span class="sd">            luminosities. If set to None, then will use self.group_list.</span>
+<span class="sd">        core_corr_factor</span>
+<span class="sd">            Inner radius for calculating core-corrected temperatures. </span>
+<span class="sd">            Gas particles within (core_corr_factor*R, R) will be used </span>
+<span class="sd">            for calculation.</span>
+<span class="sd">        calcu_field</span>
+<span class="sd">            Radius to calculate temperatures and luminosities within. </span>
+<span class="sd">            Must be in radius_field. Default: R_500.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">halo_id_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_group</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_group_list (or init_relationship) first!&#39;</span><span class="p">)</span>
+            <span class="n">halo_id_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_list</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_radii</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_radii_masses first!&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_have_new_catalogue</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Must get_new_catalogue first!&#39;</span><span class="p">)</span>
+        
+        <span class="n">list_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">halo_id_list</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">halo_id_list</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculating temperatures and luminosities... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span>\
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">list_length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">halo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">calcu_field</span><span class="p">]</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="s1">&#39;kpc&#39;</span><span class="p">)</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">transformation</span><span class="o">.</span><span class="n">inverse_translate</span><span class="p">(</span><span class="n">halo</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">tx</span><span class="p">:</span>
+                <span class="n">subsim</span> <span class="o">=</span> <span class="n">halo</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">Sphere</span><span class="p">(</span><span class="n">R</span><span class="p">)]</span>
+                <span class="n">hot_diffuse_gas_</span> <span class="o">=</span> <span class="n">subsim</span><span class="o">.</span><span class="n">gas</span><span class="p">[</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">HighPass</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;5e5 K&#39;</span><span class="p">)</span> <span class="o">&amp;</span> \
+                            <span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">LowPass</span><span class="p">(</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;0.13 cm**-3&#39;</span><span class="p">)]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;spec&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="n">cal_tspec</span><span class="p">(</span><span class="n">hot_diffuse_gas_</span><span class="p">,</span> \
+                                <span class="n">cal_f</span><span class="o">=</span><span class="n">cal_file</span><span class="p">,</span> <span class="n">datatype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">),</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;keV&#39;</span><span class="p">)</span>
+                <span class="c1"># Core-corrected temperatures:</span>
+                <span class="c1"># Filter:</span>
+                <span class="n">corr_hot_</span> <span class="o">=</span> <span class="n">hot_diffuse_gas_</span><span class="p">[</span><span class="o">~</span><span class="n">pnb</span><span class="o">.</span><span class="n">filt</span><span class="o">.</span><span class="n">Sphere</span><span class="p">(</span><span class="n">core_corr_factor</span><span class="o">*</span><span class="n">R</span><span class="p">)]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">][</span><span class="s1">&#39;spec_corr&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="n">cal_tspec</span><span class="p">(</span><span class="n">corr_hot_</span><span class="p">,</span> \
+                                <span class="n">cal_f</span><span class="o">=</span><span class="n">cal_file</span><span class="p">,</span> <span class="n">datatype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">),</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;keV&#39;</span><span class="p">)</span></div>
+<div class="viewcode-block" id="halo_props.get_center"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.halo_props.get_center">[docs]</a>    <span class="k">def</span> <span class="nf">get_center</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate the center of the halos if an ahfcatalogue is </span>
+<span class="sd">        provided, then will automatically load the results in ahf. </span>
+<span class="sd">        Otherwise it will try to calculate the center coordinates </span>
+<span class="sd">        via gravitional potential or center of mass.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        ------</span>
+<span class="sd">        Due to a bug in pynbody, calculating center of mass will </span>
+<span class="sd">        lead to an incorrect result for the halos crossing the </span>
+<span class="sd">        periodical boundary of the simulation box. Make sure pynbody </span>
+<span class="sd">        has fixed it before you use.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">datatype</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s1">&#39;_ahf&#39;</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Xc&#39;</span><span class="p">,</span> <span class="s1">&#39;Yc&#39;</span><span class="p">,</span> <span class="s1">&#39;Zc&#39;</span><span class="p">]</span>
+            <span class="n">tempcen</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">:</span>
+                <span class="n">tempcen</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">tempcen</span><span class="p">[</span><span class="s1">&#39;Xc&#39;</span><span class="p">],</span> <span class="n">tempcen</span><span class="p">[</span><span class="s1">&#39;Yc&#39;</span><span class="p">],</span> <span class="n">tempcen</span><span class="p">[</span><span class="s1">&#39;Zc&#39;</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;kpc&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;h&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">datatype</span> <span class="o">==</span> <span class="s1">&#39;tipsy_ahf&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;boxsize&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="s1">&#39;kpc&#39;</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;kpc&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;phi&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">loadable_keys</span><span class="p">():</span>
+                <span class="n">center_mode</span> <span class="o">=</span> <span class="s1">&#39;pot&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">center_mode</span> <span class="o">=</span> <span class="s1">&#39;com&#39;</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+                <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">haloid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculating center... </span><span class="si">{:7}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pnb</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">halo</span><span class="o">.</span><span class="n">center</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_catalogue</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="n">center_mode</span><span class="p">,</span> <span class="n">retcen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">vel</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_have_center</span> <span class="o">=</span> <span class="kc">True</span></div></div>
+    
+<div class="viewcode-block" id="get_union"><a class="viewcode-back" href="../../halo_analysis.html#modules.halo_analysis.get_union">[docs]</a><span class="k">def</span> <span class="nf">get_union</span><span class="p">(</span><span class="n">catalogue</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Calculate the union of the particles listed in the list.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    catalogue : pynbody.halo.HaloCatalogue</span>
+<span class="sd">    list</span>
+<span class="sd">        List of halos in the catalogue to get union.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">temp_halo</span> <span class="o">=</span> <span class="n">catalogue</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="n">temp_halo</span> <span class="o">=</span> <span class="n">temp_halo</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">catalogue</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">temp_halo</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">XIGrM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prepare_pyatomdb.html">Pyatomdb Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cosmology.html">Cosmology Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gas_properties.html">Gas Properties Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../X_properties.html">X-ray Properties Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../calculate_R.html">Calculating Radii Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../halo_analysis.html">Halo Analysis Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Description.html">How to Use</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Zhiwei Shao and Douglas Rennehan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
