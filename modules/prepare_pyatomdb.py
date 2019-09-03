@@ -45,9 +45,14 @@ else:
     line_file = ATOMDB + '/apec_line.fits'
     coco_file = ATOMDB + '/apec_coco.fits'
 
-line = fits.open(line_file)
-continuum = fits.open(coco_file)
-
+try:
+    line = fits.open(line_file)
+    continuum = fits.open(coco_file)
+except FileNotFoundError:
+    _version = '3.0.9'
+    pyatomdb.util.download_atomdb_emissivity_files(ATOMDB, '00000000', _version)
+    line = fits.open(line_file)
+    continuum = fits.open(coco_file)
 # ergperkev
 erg_per_kev = (1*astrou.keV/astrou.erg).cgs.value#1.60205062e-9
 
