@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 project = 'XIGrM'
 copyright = '2019, Zhiwei Shao, Ziqian Hua, Douglas Rennehan'
-author = 'Zhiwei Shao, Ziqian Hua, Douglas Rennehan'
+author = 'Zhiwei Shao and Douglas Rennehan'
 
 
 # -- General configuration ---------------------------------------------------
@@ -34,13 +34,11 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.autosummary',
-    'numpydoc',
     'sphinx.ext.todo',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.inheritance_diagram',
-    'sphinx.ext.mathjax',
-    'nbsphinx'
+    'sphinx.ext.mathjax'
     ]
 
 # Add any paths that contain templates here, relative to this directory.
