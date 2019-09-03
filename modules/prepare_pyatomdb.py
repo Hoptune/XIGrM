@@ -16,6 +16,7 @@ import numpy as np
 import astropy.io.fits as fits
 from astropy import units as astrou
 from astropy import constants as astroc
+import time
 import h5py
 import os
 
@@ -50,9 +51,15 @@ try:
     continuum = fits.open(coco_file)
 except FileNotFoundError:
     _version = '3.0.9'
-    pyatomdb.util.download_atomdb_emissivity_files(ATOMDB, '00000000', _version)
+    userid = '00000000'
+    userprefs={}
+    userprefs['USERID'] = userid
+    userprefs['LASTVERSIONCHECK'] = time.time()
+    pyatomdb.util.write_user_prefs(userprefs, adbroot=ATOMDB)
+    pyatomdb.util.download_atomdb_emissivity_files(ATOMDB, userid, _version)
     line = fits.open(line_file)
     continuum = fits.open(coco_file)
+
 # ergperkev
 erg_per_kev = (1*astrou.keV/astrou.erg).cgs.value#1.60205062e-9
 
