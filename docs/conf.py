@@ -66,4 +66,5 @@ html_static_path = ['_static']
 numpydoc_show_class_members = False
 
 pygments_style = 'sphinx'
+master_doc = 'index'
 # autosummary_generate = True
