@@ -37,6 +37,7 @@ except KeyError:
     HOME = os.environ['HOME']
     ATOMDB = HOME + '/atomdb'
     os.mkdir(ATOMDB)
+    os.environ['ATOMDB'] = ATOMDB
 
 # Change the following into your own path.
 
