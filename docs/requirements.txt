@@ -5,3 +5,5 @@ sphinx
 scipy
 requests
 joblib
+pynbody
+pyatomdb

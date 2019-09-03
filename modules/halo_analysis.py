@@ -531,7 +531,7 @@ class halo_props:
                 self_Mstar = self.prop['M']['total_star'][i] - children_union.star['mass'].sum()
                 #self_Msfgas = self.prop['M']['total_sfgas'][i] - sf_gas_union['mass'].sum()
             self.prop['M']['self_star'][i] = self_Mstar
-            self.prop['M']['self_sfgas'][i] = self_Msfgas
+            # self.prop['M']['self_sfgas'][i] = self_Msfgas
             try:
                 if self_Mstar > 0:# + self_Msfgas > low_limit:
                     self.galaxy_list.append(j)

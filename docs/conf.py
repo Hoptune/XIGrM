@@ -21,6 +21,15 @@ project = 'XIGrM'
 copyright = '2019, Zhiwei Shao, Ziqian Hua, Douglas Rennehan'
 author = 'Zhiwei Shao and Douglas Rennehan'
 
+from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['pytspec']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ---------------------------------------------------
 
