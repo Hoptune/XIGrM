@@ -85,4 +85,4 @@ Key name      Description
 
 Examples
 ----------
-Comming soon... For now, see "Final Tutorial.ipynb" for details.
+Comming soon... For now, see "Final_Tutorial.ipynb" for details.

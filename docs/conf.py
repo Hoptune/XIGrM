@@ -21,7 +21,10 @@ project = 'XIGrM'
 copyright = '2019, Zhiwei Shao, Ziqian Hua, Douglas Rennehan'
 author = 'Zhiwei Shao and Douglas Rennehan'
 
-from unittest.mock import MagicMock
+try:
+  from unittest.mock import MagicMock
+except ImportError:
+  from mock import Mock as MagicMock
 
 class Mock(MagicMock):
     @classmethod
