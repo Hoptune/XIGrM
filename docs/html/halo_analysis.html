@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Halo Analysis Module &#8212; XIGrM  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="How to Use" href="Description.html" />
+    <link rel="prev" title="Calculating Radii Module" href="calculate_R.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-modules.halo_analysis">
+<span id="halo-analysis-module"></span><h1>Halo Analysis Module<a class="headerlink" href="#module-modules.halo_analysis" title="Permalink to this headline">¶</a></h1>
+<p>Tools for analysing halo properties. 
+Assume any necessary basic quantities is already 
+prepared as the derived arrays of the snapshot.</p>
+<dl class="function">
+<dt id="modules.halo_analysis.get_union">
+<code class="sig-prename descclassname">modules.halo_analysis.</code><code class="sig-name descname">get_union</code><span class="sig-paren">(</span><em class="sig-param">catalogue</em>, <em class="sig-param">list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#get_union"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.get_union" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the union of the particles listed in the list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>catalogue</strong><span class="classifier">pynbody.halo.HaloCatalogue</span></dt><dd></dd>
+<dt><strong>list</strong></dt><dd><p>List of halos in the catalogue to get union.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="modules.halo_analysis.halo_props">
+<em class="property">class </em><code class="sig-prename descclassname">modules.halo_analysis.</code><code class="sig-name descname">halo_props</code><span class="sig-paren">(</span><em class="sig-param">halocatalogue, datatype, field={'L': ['x', 'x_cont', 'xb', 'xb_cont'], 'M': ['vir', '200', '500', '2500', 'star200', 'gas200', 'bar200', 'ism200', 'cold200', 'igrm200', 'star500', 'gas500', 'bar500', 'ism500', 'cold500', 'igrm500', 'total_star', 'self_star'], 'R': ['vir', '200', '500', '2500'], 'S': ['500', '2500'], 'T': ['x', 'x_cont', 'mass', 'spec', 'spec_corr', 'x_corr', 'x_corr_cont', 'mass_corr']}, host_id_of_top_level=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Systematically analyse the halo X-ray properties based 
+on other modules.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>datatype</strong><span class="classifier">str</span></dt><dd><p>A copy of the input type of simulation data.</p>
+</dd>
+<dt><strong>catalogue_original</strong><span class="classifier">pynbody.halo.HaloCatalogue</span></dt><dd><p>The input halo catalogue.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">length of the input catalogue.</span></dt><dd></dd>
+<dt><strong>host_id_of_top_level</strong></dt><dd><p>How catalogue record “hostHalo” for those halos 
+without a host halo. Default is 0.</p>
+</dd>
+<dt><strong>errorlist</strong><span class="classifier">list</span></dt><dd><p>Record when the host halo ID of a certain subhalo is not 
+recorded in the catalogue (weird but will happen in
+ahf sometimes).</p>
+</dd>
+<dt><strong>rho_crit</strong></dt><dd><p>Critical density of the current snapshot in Msol kpc**-3.</p>
+</dd>
+<dt><strong>ovdens</strong></dt><dd><p>Virial overdensity factor $Delta$ of the current snapshot.</p>
+</dd>
+<dt><strong>dict</strong><span class="classifier">astropy.table.Table</span></dt><dd><p>A copy of the halo.properties dictionary but in a table form
+to make future reference more convenient.</p>
+</dd>
+<dt><strong>haloid</strong></dt><dd><p>List of halo_id given by property dictionary.</p>
+</dd>
+<dt><strong>IDlist</strong></dt><dd><p>Table of halo_id and corresponding #ID given in the property 
+dictionary.</p>
+</dd>
+<dt><strong>hostid</strong></dt><dd><p>List of the halo_id of the host halo of each halo (originally 
+recorded in the property dictionary in the form of #ID).</p>
+</dd>
+<dt><strong>new_catalogue</strong><span class="classifier">dict</span></dt><dd><p>The new catalogue which includes all the subhalo particles 
+in its host halo. The keys of the dictionary are the indexes of 
+halos in <cite>catalogue_original</cite>.</p>
+</dd>
+<dt><strong>prop</strong></dt><dd><p>Table of quantities corresponding to input field.</p>
+</dd>
+<dt><strong>host_list</strong></dt><dd><p>List of host halos.</p>
+</dd>
+<dt><strong>tophost</strong></dt><dd><p>halo_ids of the top-level host halo for each halo.</p>
+</dd>
+<dt><strong>children</strong><span class="classifier">list of sets</span></dt><dd><p>Each set corresponds to the one-level down children of each halo.</p>
+</dd>
+<dt><strong>galaxy_list</strong></dt><dd><p>List of all galaxies (as long as n_star &gt; 0).</p>
+</dd>
+<dt><strong>lumi_galaxy_list</strong></dt><dd><p>List of all luminous galaxies (self_m_star &gt; galaxy_low_limit).</p>
+</dd>
+<dt><strong>galaxies</strong><span class="classifier">list of sets</span></dt><dd><p>Each set corresponds to the embeded galaxies of each halo. All 
+the subhalos will not be considered and will have an empty set. 
+And for host halos it will include all the galaxies within it, 
+including the galaxies actually embedded in the subhalo (i.e., 
+the children of subhalo).</p>
+</dd>
+<dt><strong>lumi_galaxies</strong></dt><dd><p>Each set corresponds to the embeded luminous galaxies of each 
+halo. Same as <cite>galaxies</cite>, only care about host halo and include 
+all the luminous galaxies within.</p>
+</dd>
+<dt><strong>n_lgal</strong></dt><dd><p>Number of total luminous galaxies embedded in each halo. Again, 
+only care about host halos and the galaxies within subhalos 
+(i.e., subhalos themselves) will also be taken into account.</p>
+</dd>
+<dt><strong>group_list</strong></dt><dd><p>halo_id of the halo identified as group in the catalogue.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.calcu_entropy">
+<code class="sig-name descname">calcu_entropy</code><span class="sig-paren">(</span><em class="sig-param">self, cal_file, halo_id_list=array([], dtype=float64), calcu_field=['500', '2500'], thickness=SimArray(1, 'kpc')</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.calcu_entropy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.calcu_entropy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate all entropy within a thin spherical shell 
+centered at halo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cal_file</strong></dt><dd><p>Calibration file used for calculating Tspec.</p>
+</dd>
+<dt><strong>halo_id_list</strong></dt><dd><p>List of halo_ids to calculate entropies. 
+If set to None, then will use self.group_list.</p>
+</dd>
+<dt><strong>calcu_field</strong></dt><dd><p>Radii of the thin shell to calculate entropies.</p>
+</dd>
+<dt><strong>thickness</strong></dt><dd><p>Thickness of the spherical shell.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.calcu_radii_masses">
+<code class="sig-name descname">calcu_radii_masses</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">halo_id_list=array([]</em>, <em class="sig-param">dtype=float64)</em>, <em class="sig-param">rdict=None</em>, <em class="sig-param">precision=0.01</em>, <em class="sig-param">rmax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.calcu_radii_masses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.calcu_radii_masses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate radii (Rvir, R200, etc) and corresponding masses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>halo_id_list</strong></dt><dd><p>List of halo_ids to calculate radii and masses. 
+If set to None, then will use self.group_list.</p>
+</dd>
+<dt><strong>rdict</strong></dt><dd><p>names and values for overdensity factors. Default is: 
+{‘vir’: self.ovdens, ‘200’: 200, ‘500’: 500, ‘2500’: 2500}</p>
+</dd>
+<dt><strong>precision</strong></dt><dd><p>Precision for calculate radius. See get_index() in 
+calculate_R.py documentation for detail.</p>
+</dd>
+<dt><strong>rmax</strong></dt><dd><p>Maximum value for the shrinking sphere method. See 
+get_index() in calculate_R.py documentation for detail.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.calcu_specific_masses">
+<code class="sig-name descname">calcu_specific_masses</code><span class="sig-paren">(</span><em class="sig-param">self, halo_id_list=array([], dtype=float64), calcu_field=['200', '500']</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.calcu_specific_masses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.calcu_specific_masses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate some specific masses, such as baryon, IGrM, etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>halo_id_list</strong></dt><dd><p>List of halo_ids to calculate masses. 
+If set to None, then will use self.group_list.</p>
+</dd>
+<dt><strong>calcu_field</strong></dt><dd><p>Radii to calculate specific masses within.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.calcu_temp_lumi">
+<code class="sig-name descname">calcu_temp_lumi</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">cal_file</em>, <em class="sig-param">halo_id_list=array([]</em>, <em class="sig-param">dtype=float64)</em>, <em class="sig-param">core_corr_factor=0.15</em>, <em class="sig-param">calcu_field='500'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.calcu_temp_lumi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.calcu_temp_lumi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate all the temperatures and luminosities listed in
+temp_field and luminosity_field.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cal_file</strong></dt><dd><p>Calibration file used for calculating Tspec.</p>
+</dd>
+<dt><strong>halo_id_list</strong></dt><dd><p>List of halo_ids to calculate temperatures 
+and luminosities. If set to None, then will use 
+self.group_list.</p>
+</dd>
+<dt><strong>core_corr_factor</strong></dt><dd><p>Inner radius for calculating core-corrected 
+temperatures. Gas particles within 
+(core_corr_factor*R, R) will be used for calculation.</p>
+</dd>
+<dt><strong>calcu_field</strong></dt><dd><p>Radius to calculate temperatures and luminosities 
+within. Must be in radius_field. Default: R_500.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.calcu_tspec">
+<code class="sig-name descname">calcu_tspec</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">cal_file</em>, <em class="sig-param">halo_id_list=array([]</em>, <em class="sig-param">dtype=float64)</em>, <em class="sig-param">core_corr_factor=0.15</em>, <em class="sig-param">calcu_field='500'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.calcu_tspec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.calcu_tspec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate spectroscopic temperatures based on Douglas’s 
+pytspec module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cal_file</strong></dt><dd><p>Calibration file used for calculating Tspec.</p>
+</dd>
+<dt><strong>halo_id_list</strong></dt><dd><p>List of halo_ids to calculate temperatures and 
+luminosities. If set to None, then will use self.group_list.</p>
+</dd>
+<dt><strong>core_corr_factor</strong></dt><dd><p>Inner radius for calculating core-corrected temperatures. 
+Gas particles within (core_corr_factor*R, R) will be used 
+for calculation.</p>
+</dd>
+<dt><strong>calcu_field</strong></dt><dd><p>Radius to calculate temperatures and luminosities within. 
+Must be in radius_field. Default: R_500.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.calcu_tx_lx">
+<code class="sig-name descname">calcu_tx_lx</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">halo_id_list=array([]</em>, <em class="sig-param">dtype=float64)</em>, <em class="sig-param">core_corr_factor=0.15</em>, <em class="sig-param">calcu_field='500'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.calcu_tx_lx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.calcu_tx_lx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate X-ray luminosities and emission weighted 
+temperatures listed in temp_field and luminosity_field.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>halo_id_list</strong></dt><dd><p>List of halo_ids to calculate temperatures on. 
+If set to None, then will use self.group_list.</p>
+</dd>
+<dt><strong>core_corr_factor</strong></dt><dd><p>Inner radius for calculating core-corrected 
+temperatures. Gas particles within 
+(core_corr_factor*R, R) will be used for calculation.</p>
+</dd>
+<dt><strong>calcu_field</strong></dt><dd><p>Radius to calculate temperatures and luminosities 
+within. Must be in radius_field. Default: R_500.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.get_center">
+<code class="sig-name descname">get_center</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.get_center"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.get_center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the center of the halos if an ahfcatalogue is 
+provided, then will automatically load the results in ahf. 
+Otherwise it will try to calculate the center coordinates 
+via gravitional potential or center of mass.</p>
+<p class="rubric">Notes</p>
+<p>Due to a bug in pynbody, calculating center of mass will 
+lead to an incorrect result for the halos crossing the 
+periodical boundary of the simulation box. Make sure pynbody 
+has fixed it before you use.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.get_children">
+<code class="sig-name descname">get_children</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.get_children"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.get_children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate list of children (subhalos) for each halo.
+Subhalo itself can also have children. And this list 
+will not contain “grandchildren” (i.e., the children 
+of children).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.get_galaxy">
+<code class="sig-name descname">get_galaxy</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">g_low_limit</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.get_galaxy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.get_galaxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate list of galaxies for each host halo. The subsubhalo 
+will also be included in the hosthalo galaxy list. And it won’t 
+generate list for the subhalos even if there are galaxies within.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.get_group_list">
+<code class="sig-name descname">get_group_list</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">N_galaxy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.get_group_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.get_group_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>halo_id of the halo identified as group in the catalogue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>N_galaxy</strong><span class="classifier">int</span></dt><dd><p>Number of luminous galaxies above which host halos 
+are considered as groups.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.get_new_catalogue">
+<code class="sig-name descname">get_new_catalogue</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.get_new_catalogue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.get_new_catalogue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a new catalogue based on catalogue_original, 
+the new catalogue will include all the subhalo particles 
+in its host halo.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.init_relationship">
+<code class="sig-name descname">init_relationship</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">galaxy_low_limit</em>, <em class="sig-param">N_galaxy=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.init_relationship"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.init_relationship" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get basic information regarding groups, hosts, children, etc.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="modules.halo_analysis.halo_props.savedata">
+<code class="sig-name descname">savedata</code><span class="sig-paren">(</span><em class="sig-param">self, filename, field={'R': ['vir', '200', '500', '2500'], 'M': ['vir', '200', '500', '2500', 'star200', 'gas200', 'bar200', 'ism200', 'cold200', 'igrm200', 'star500', 'gas500', 'bar500', 'ism500', 'cold500', 'igrm500', 'total_star', 'self_star'], 'T': ['x', 'x_cont', 'mass', 'spec', 'spec_corr', 'x_corr', 'x_corr_cont', 'mass_corr'], 'S': ['500', '2500'], 'L': ['x', 'x_cont', 'xb', 'xb_cont']}, halo_id_list=array([], dtype=float64), units={'T': 'keV', 'L': 'erg s**-1', 'R': 'kpc', 'M': 'Msol', 'S': 'keV cm**2'}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/halo_analysis.html#halo_props.savedata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.halo_analysis.halo_props.savedata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the data in hdf5 format. Will save halo_id_list 
+(key: ‘halo_id’) and the quantities listed in field.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>filename</strong></dt><dd><p>Filename of the hdf5 file.</p>
+</dd>
+<dt><strong>field</strong></dt><dd><p>Type of information to save.</p>
+</dd>
+<dt><strong>halo_id_list</strong></dt><dd><p>List of halo_ids to save.If set to None, 
+then will use self.group_list.</p>
+</dd>
+<dt><strong>units</strong></dt><dd><p>Convert the data into specified inits and save.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">XIGrM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="prepare_pyatomdb.html">Pyatomdb Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cosmology.html">Cosmology Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gas_properties.html">Gas Properties Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="X_properties.html">X-ray Properties Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calculate_R.html">Calculating Radii Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Halo Analysis Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Description.html">How to Use</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="calculate_R.html" title="previous chapter">Calculating Radii Module</a></li>
+      <li>Next: <a href="Description.html" title="next chapter">How to Use</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Zhiwei Shao and Douglas Rennehan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/halo_analysis.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

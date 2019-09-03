@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>X-ray Properties Module &#8212; XIGrM  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Calculating Radii Module" href="calculate_R.html" />
+    <link rel="prev" title="Gas Properties Module" href="gas_properties.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-modules.X_properties">
+<span id="x-ray-properties-module"></span><h1>X-ray Properties Module<a class="headerlink" href="#module-modules.X_properties" title="Permalink to this headline">¶</a></h1>
+<p>Tools for analysing halo X-ray properties using pynbody.
+Assume any necessary quantity is already prepared as 
+the derived arrays of the snapshot.</p>
+<dl class="function">
+<dt id="modules.X_properties.cal_tspec">
+<code class="sig-prename descclassname">modules.X_properties.</code><code class="sig-name descname">cal_tspec</code><span class="sig-paren">(</span><em class="sig-param">hdgas</em>, <em class="sig-param">cal_f</em>, <em class="sig-param">datatype</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/X_properties.html#cal_tspec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.X_properties.cal_tspec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Tspec of hot diffuse gas particles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>hdgas</strong><span class="classifier">pynbody.snapshot.SubSnap</span></dt><dd><p>SubSnap of the hot diffuse gas.</p>
+</dd>
+<dt><strong>cal_f</strong><span class="classifier">str</span></dt><dd><p>Calibration file.</p>
+</dd>
+<dt><strong>datatype</strong><span class="classifier">str</span></dt><dd><p>Simulation data type.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="modules.X_properties.cal_tweight">
+<code class="sig-prename descclassname">modules.X_properties.</code><code class="sig-name descname">cal_tweight</code><span class="sig-paren">(</span><em class="sig-param">halo</em>, <em class="sig-param">weight_type='Lx'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modules/X_properties.html#cal_tweight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#modules.X_properties.cal_tweight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate luminosity weighted or mass weighted temperatures.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>halo</strong><span class="classifier">pynbody.snapshot.SubSnap</span></dt><dd><p>SubSnap of the halo.</p>
+</dd>
+<dt><strong>weight_type</strong><span class="classifier">str</span></dt><dd><p>Type of weight to take. Related to the available properties
+of the gas. Now available: luminousity weighted (starts 
+with ‘l’) and mass weighted (starts with ‘m’)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">XIGrM</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="prepare_pyatomdb.html">Pyatomdb Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cosmology.html">Cosmology Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gas_properties.html">Gas Properties Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">X-ray Properties Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calculate_R.html">Calculating Radii Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="halo_analysis.html">Halo Analysis Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Description.html">How to Use</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="gas_properties.html" title="previous chapter">Gas Properties Module</a></li>
+      <li>Next: <a href="calculate_R.html" title="next chapter">Calculating Radii Module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Zhiwei Shao and Douglas Rennehan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/X_properties.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
