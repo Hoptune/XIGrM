@@ -30,7 +30,10 @@ def elsymbs_to_z0s(elements): # Get atomic numbers for given element lists.
     aNumbers = np.array(aNumbers)
     return np.sort(aNumbers)
 
-ATOMDB = os.environ['ATOMDB']
+try:
+    ATOMDB = os.environ['ATOMDB']
+except KeyError:
+    ATOMDB = ''
 
 # Change the following into your own path.
 if len(ATOMDB) != 0:
