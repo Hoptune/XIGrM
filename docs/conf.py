@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'XIGrM'
-copyright = '2019, Zhiwei Shao, Ziqian Hua, Douglas Rennehan'
+copyright = '2019, Zhiwei Shao and Douglas Rennehan'
 author = 'Zhiwei Shao and Douglas Rennehan'
 
 try:
@@ -31,7 +31,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-MOCK_MODULES = ['pytspec']
+MOCK_MODULES = ['pytspec', 'pynbody', 'pyatomdb']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ---------------------------------------------------
