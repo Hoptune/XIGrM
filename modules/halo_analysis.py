@@ -61,7 +61,7 @@ class halo_props:
     rho_crit
         Critical density of the current snapshot in Msol kpc**-3.
     ovdens
-        Virial overdensity factor $\Delta$ of the current snapshot.
+        Virial overdensity factor :math:`\Delta_{vir}` of the current snapshot.
     dict : astropy.table.Table
         A copy of the halo.properties dictionary but in a table form
         to make future reference more convenient.

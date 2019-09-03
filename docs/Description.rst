@@ -83,6 +83,9 @@ Key name      Description
 2500          Entropy of the shell at :math:`R_{2500}`
 ============  ===========
 
+Besides, there are other attributes of `class halo_props` which might be 
+useful, see Halo Analysis Module for details.
+
 Examples
 ----------
 Coming soon... For now, see `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ for details.
