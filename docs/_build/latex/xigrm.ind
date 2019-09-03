@@ -1,0 +1,96 @@
+\begin{sphinxtheindex}
+\let\bigletter\sphinxstyleindexlettergroup
+\let\spxpagem \sphinxstyleindexpagemain
+\let\spxentry \sphinxstyleindexentry
+\let\spxextra \sphinxstyleindexextra
+
+  \bigletter A
+  \item \spxentry{abundance\_to\_solar()}\spxextra{in module modules.gas\_properties}, 
+		\hyperpage{5}
+  \item \spxentry{AG89\_abundances()}\spxextra{in module modules.prepare\_pyatomdb}, \hyperpage{3}
+
+  \indexspace
+  \bigletter C
+  \item \spxentry{cal\_tspec()}\spxextra{in module modules.X\_properties}, \hyperpage{5}
+  \item \spxentry{cal\_tweight()}\spxextra{in module modules.X\_properties}, \hyperpage{6}
+  \item \spxentry{calcu\_entropy()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{8}
+  \item \spxentry{calcu\_luminosity()}\spxextra{in module modules.gas\_properties}, \hyperpage{5}
+  \item \spxentry{calcu\_radii\_masses()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{8}
+  \item \spxentry{calcu\_specific\_masses()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{8}
+  \item \spxentry{calcu\_temp\_lumi()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{9}
+  \item \spxentry{calcu\_tspec()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{9}
+  \item \spxentry{calcu\_tx\_lx()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{9}
+  \item \spxentry{calculate\_continuum\_emission()}\spxextra{in module modules.prepare\_pyatomdb}, 
+		\hyperpage{3}
+  \item \spxentry{calculate\_line\_emission()}\spxextra{in module modules.prepare\_pyatomdb}, 
+		\hyperpage{3}
+
+  \indexspace
+  \bigletter D
+  \item \spxentry{Delta\_vir()}\spxextra{in module modules.cosmology}, \hyperpage{4}
+
+  \indexspace
+  \bigletter E
+  \item \spxentry{elsymbs\_to\_z0s()}\spxextra{in module modules.prepare\_pyatomdb}, \hyperpage{4}
+  \item \spxentry{Ez()}\spxextra{in module modules.cosmology}, \hyperpage{4}
+
+  \indexspace
+  \bigletter G
+  \item \spxentry{get\_atomic\_masses()}\spxextra{in module modules.prepare\_pyatomdb}, 
+		\hyperpage{4}
+  \item \spxentry{get\_center()}\spxextra{modules.halo\_analysis.halo\_props method}, \hyperpage{9}
+  \item \spxentry{get\_children()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{10}
+  \item \spxentry{get\_galaxy()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{10}
+  \item \spxentry{get\_group\_list()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{10}
+  \item \spxentry{get\_index()}\spxextra{in module modules.prepare\_pyatomdb}, \hyperpage{4}
+  \item \spxentry{get\_new\_catalogue()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{10}
+  \item \spxentry{get\_radius()}\spxextra{in module modules.calculate\_R}, \hyperpage{6}
+  \item \spxentry{get\_radius\_bisection()}\spxextra{in module modules.calculate\_R}, \hyperpage{6}
+  \item \spxentry{get\_union()}\spxextra{in module modules.halo\_analysis}, \hyperpage{7}
+
+  \indexspace
+  \bigletter H
+  \item \spxentry{halo\_props}\spxextra{class in modules.halo\_analysis}, \hyperpage{7}
+
+  \indexspace
+  \bigletter I
+  \item \spxentry{init\_relationship()}\spxextra{modules.halo\_analysis.halo\_props method}, 
+		\hyperpage{10}
+
+  \indexspace
+  \bigletter L
+  \item \spxentry{load\_emissivity\_file()}\spxextra{in module modules.prepare\_pyatomdb}, 
+		\hyperpage{4}
+
+  \indexspace
+  \bigletter M
+  \item \spxentry{modules.calculate\_R}\spxextra{module}, \hyperpage{6}
+  \item \spxentry{modules.cosmology}\spxextra{module}, \hyperpage{4}
+  \item \spxentry{modules.gas\_properties}\spxextra{module}, \hyperpage{5}
+  \item \spxentry{modules.halo\_analysis}\spxextra{module}, \hyperpage{7}
+  \item \spxentry{modules.prepare\_pyatomdb}\spxextra{module}, \hyperpage{3}
+  \item \spxentry{modules.X\_properties}\spxextra{module}, \hyperpage{5}
+
+  \indexspace
+  \bigletter N
+  \item \spxentry{nh()}\spxextra{in module modules.gas\_properties}, \hyperpage{5}
+
+  \indexspace
+  \bigletter S
+  \item \spxentry{savedata()}\spxextra{modules.halo\_analysis.halo\_props method}, \hyperpage{10}
+
+  \indexspace
+  \bigletter T
+  \item \spxentry{temp()}\spxextra{in module modules.gas\_properties}, \hyperpage{5}
+
+\end{sphinxtheindex}
