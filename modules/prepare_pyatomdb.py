@@ -33,18 +33,17 @@ def elsymbs_to_z0s(elements): # Get atomic numbers for given element lists.
 try:
     ATOMDB = os.environ['ATOMDB']
 except KeyError:
-    ATOMDB = ''
+    HOME = os.environ['HOME']
+    ATOMDB = HOME + '/atomdb'
 
 # Change the following into your own path.
-if len(ATOMDB) != 0:
-    if ATOMDB[-1] == '/':
-        line_file = ATOMDB + 'apec_line.fits'
-        coco_file = ATOMDB + 'apec_coco.fits'
-    else:
-        line_file = ATOMDB + '/apec_line.fits'
-        coco_file = ATOMDB + '/apec_coco.fits'
+
+if ATOMDB[-1] == '/':
+    line_file = ATOMDB + 'apec_line.fits'
+    coco_file = ATOMDB + 'apec_coco.fits'
 else:
-    print('Please set your $ATOMDB environment!')
+    line_file = ATOMDB + '/apec_line.fits'
+    coco_file = ATOMDB + '/apec_coco.fits'
 
 line = fits.open(line_file)
 continuum = fits.open(coco_file)
