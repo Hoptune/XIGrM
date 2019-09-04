@@ -96,4 +96,4 @@ in `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tut
 
 The main calculation part is now done. If you want to see what plots you 
 can get based on above calculation, see 
-`Plots.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Plots.ipynb>`_
+`Plots.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Plots.ipynb>`_.
