@@ -181,12 +181,25 @@ class halo_props:
         self._have_new_catalogue = False
         self._have_center = False
 
-    def init_relationship(self, galaxy_low_limit, N_galaxy=3):
+    def init_relationship(self, galaxy_low_limit, include_sub, N_galaxy=3):
         '''
         Get basic information regarding groups, hosts, children, etc.
+
+        Parameters
+        ------------
+        galaxy_low_limit : pynbody.array.SimArray
+            Required by get_galaxyh(). Limit above which galaxies will 
+            be identified as luminous galaxies.
+        include_sub
+            Whether or not to include all the subhalo particles when 
+            generating the new catalogue. See get_new_catalogue() for 
+            details.
+        N_galaxy : int
+            Required by get_group_list(). Number of luminous galaxies 
+            above which host halos are considered as groups.
         '''
         self.get_children()
-        self.get_new_catalogue()
+        self.get_new_catalogue(include_ = include_sub)
         self.get_galaxy(g_low_limit = galaxy_low_limit)
         self.get_group_list(N_galaxy)
         self.get_center()
@@ -468,24 +481,34 @@ class halo_props:
                 self.errorlist[1][j] = hostID
         self._have_children = True
     
-    def get_new_catalogue(self):
+    def get_new_catalogue(self, include_):
         '''
         Generate a new catalogue based on catalogue_original, 
         the new catalogue will include all the subhalo particles 
         in its host halo.
+        
+        Parameters
+        -------------
+        include_ : bool
+            If True, then will include all the subhalo particles. 
+            Otherwise will just be a copy of catalogue_original.
         '''
-
         if not self._have_children:
             raise Exception('Must get_children first!')
         self.new_catalogue = {}
-        for i in range(self.length):
-            j = self.haloid[i]
-            print('Generating new catalogue... {:7} / {}'.format(j, self.length), end='\r')
-            if len(self.children[i]) == 0:
+        if include_:
+            for i in range(self.length):
+                j = self.haloid[i]
+                print('Generating new catalogue... {:7} / {}'.format(j, self.length), end='\r')
+                if len(self.children[i]) == 0:
+                    self.new_catalogue[j] = self.catalogue_original[j]
+                else:
+                    union_list = [j] + list(self.children[i])
+                    self.new_catalogue[j] = get_union(self.catalogue_original, union_list)
+        else:
+            for i in range(self.length):
+                j = self.haloid[i]
                 self.new_catalogue[j] = self.catalogue_original[j]
-            else:
-                union_list = [j] + list(self.children[i])
-                self.new_catalogue[j] = get_union(self.catalogue_original, union_list)
         self._have_new_catalogue = True
 
     def get_galaxy(self, g_low_limit):
@@ -493,6 +516,12 @@ class halo_props:
         Generate list of galaxies for each host halo. The subsubhalo 
         will also be included in the hosthalo galaxy list. And it won't 
         generate list for the subhalos even if there are galaxies within.
+
+        Parameters
+        -------------
+        g_low_limit : pynbody.array.SimArray
+            Limit above which galaxies will be identified as luminous 
+            galaxies.
         '''
         if not self._have_children:
             raise Exception('Must get_children first!')
