@@ -74,7 +74,7 @@ x_corr_cont   Emission weighted (core-corrected) temperature using :math:`L_{X, 
 mass_corr     Mass weighted (core-corrected) temperature
 ============  ===========
 
-S (calculated within a thin spherical shell with thickness = 1 kpc):
+S (calculated within a thin spherical shell with default thickness = 1 kpc):
 
 ============  ===========
 Key name      Description
@@ -88,4 +88,12 @@ useful, see Halo Analysis Module for details.
 
 Examples
 ----------
-See `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ for details.
+Though the sricpts below is written in a .py file, I strongly recommand 
+using jupyter notebook to do the following analysis, just like the one done 
+in `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ .
+
+.. literalinclude:: ../example/example.py
+
+The main calculation part is now done. If you want to see what plots you 
+can get based on above calculation, see 
+`Plots.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Plots.ipynb>`_
