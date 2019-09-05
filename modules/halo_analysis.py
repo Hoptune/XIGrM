@@ -243,7 +243,7 @@ class halo_props:
             t1 = time.time()
             MassRadii = cR.get_radius(self.new_catalogue[j], \
                     overdensities=list(rdict.values()), rho_crit=self.rho_crit, \
-                        prop=prop, precision=precision, cen=self.center[i], rmax=rmax, posformat=self.datatype)
+                        prop=prop, precision=precision, cen=self.center[i], rmax=rmax)
             for key in rdict:
                 self.prop['R'][key][i] = MassRadii[1][rdict[key]]
                 self.prop['M'][key][i] = MassRadii[0][rdict[key]]

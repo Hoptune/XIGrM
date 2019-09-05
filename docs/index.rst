@@ -15,6 +15,8 @@ of cosmological simulations based on `pynbody <http://pynbody.github.io/pynbody/
 `pytspec <https://github.com/rennehan/pytspec>`_ and `Liang et al., 2016 
 <https://academic.oup.com/mnras/article/456/4/4266/2892203>`_.
 
+Project github page is `here <https://github.com/Hoptune/XIGrM>`_.
+
 =========
 Contents
 =========
