@@ -181,7 +181,7 @@ class halo_props:
         self._have_new_catalogue = False
         self._have_center = False
 
-    def init_relationship(self, galaxy_low_limit, include_sub, N_galaxy=3):
+    def init_relationship(self, galaxy_low_limit, include_sub=False, N_galaxy=3):
         '''
         Get basic information regarding groups, hosts, children, etc.
 
@@ -366,7 +366,7 @@ class halo_props:
 
         self._have_temp = True
 
-    def calcu_entropy(self, cal_file, halo_id_list=np.array([]), \
+    def calcu_entropy(self, cal_file, n_par=9, halo_id_list=np.array([]), \
                 calcu_field=entropy_field, thickness=pnb.array.SimArray(1, 'kpc')):
         '''
         Calculate all entropy within a thin spherical shell 
@@ -376,6 +376,9 @@ class halo_props:
         -----------
         cal_file
             Calibration file used for calculating Tspec.
+        n_par : int
+            Number of particles the shell must contain, 
+            below which entropy will not be calculated.
         halo_id_list
             List of halo_ids to calculate entropies. 
             If set to None, then will use self.group_list.
@@ -406,11 +409,14 @@ class halo_props:
                     subgas = halo.gas[pnb.filt.Annulus(R, thickness + R)]
                     hot_diffuse_gas_ = subgas[pnb.filt.HighPass('temp', '5e5 K') \
                             & pnb.filt.LowPass('nh', '0.13 cm**-3')]
-                    tempTspec = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
-                            cal_f=cal_file, datatype=self.datatype), units='keV')
-                    avg_ne = (hot_diffuse_gas_['ne'] * hot_diffuse_gas_['volume']).sum() \
-                            / hot_diffuse_gas_['volume'].sum()
-                    self.prop['S'][r][i] = tempTspec/(avg_ne.in_units('cm**-3'))**(2, 3)
+                    if len(hot_diffuse_gas_) < n_par:
+                        self.prop['S'][r][i] = np.nan
+                    else:
+                        tempTspec = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
+                                cal_f=cal_file, datatype=self.datatype), units='keV')
+                        avg_ne = (hot_diffuse_gas_['ne'] * hot_diffuse_gas_['volume']).sum() \
+                                / hot_diffuse_gas_['volume'].sum()
+                        self.prop['S'][r][i] = tempTspec/(avg_ne.in_units('cm**-3'))**(2, 3)
 
     def savedata(self, filename, field = default_field, halo_id_list=np.array([]), units=default_units):
         '''
@@ -458,6 +464,7 @@ class halo_props:
         self.children = [set() for _ in range(self.length)]
         for i in range(self.length):
             j = self.haloid[i]#j = i + 1
+            print('Generating children list... Halo: {:7} / {}'.format(j, self.length), end='\r')
             prop = self.dict[i]
             hostID = prop['hostHalo']
             if j in self.errorlist[0]:
@@ -473,7 +480,7 @@ class halo_props:
                     host_haloid = self.ID_list.loc[hostID]['halo_id']
                     self.children[host_haloid - 1].add(j)
                     temphost = j
-                    while temphost != 0 and temphost != -1:
+                    while temphost != self.host_id_of_top_level:
                         temphost2 = temphost
                         temphost = self.hostid[temphost - 1]
                     self.tophost[i] = temphost2
@@ -499,7 +506,7 @@ class halo_props:
         if include_:
             for i in range(self.length):
                 j = self.haloid[i]
-                print('Generating new catalogue... {:7} / {}'.format(j, self.length), end='\r')
+                print('Generating new catalogue... Halo: {:7} / {}'.format(j, self.length), end='\r')
                 if len(self.children[i]) == 0:
                     self.new_catalogue[j] = self.catalogue_original[j]
                 else:
@@ -548,16 +555,17 @@ class halo_props:
         low_limit = g_low_limit.in_units(self.prop['M']['total_star'].units)
         for i in range(self.length):
             j = self.haloid[i]
-            print('Identifying galaxies... Halo: {:7} / {}'.format(j, self.length), end='\r')
+            print('            Identifying galaxies... Halo: {:7} / {}'.format(j, self.length), end='\r')
             children_list = np.array(list(self.children[i]))
             if len(children_list) == 0:
                 self_Mstar = self.prop['M']['total_star'][i]
                 #self_Msfgas = self.prop['M']['total_sfgas'][i]
             else:
                 children_union = get_union(self.new_catalogue, list(children_list))
+                children_union_within_ = self.new_catalogue[j].intersect(children_union)
                 #sf_gas_union = children_union.gas[pnb.filt.LowPass('temp', '3e4 K')]
                 # sf_gas_union = children_union.gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
-                self_Mstar = self.prop['M']['total_star'][i] - children_union.star['mass'].sum()
+                self_Mstar = self.prop['M']['total_star'][i] - children_union_within_.star['mass'].sum()
                 #self_Msfgas = self.prop['M']['total_sfgas'][i] - sf_gas_union['mass'].sum()
             self.prop['M']['self_star'][i] = self_Mstar
             # self.prop['M']['self_sfgas'][i] = self_Msfgas
@@ -721,7 +729,7 @@ class halo_props:
             self.center = np.concatenate((tempcen['Xc'], tempcen['Yc'], tempcen['Zc']), axis=1)
             self.center = pnb.array.SimArray(self.center, units='kpc') * self.dict['a'][0] / self.dict['h'][0]
             if self.datatype == 'tipsy_ahf':
-                self.center -= self.dict['boxsize'].in_units('kpc')/2
+                self.center -= self.dict['boxsize'][0].in_units('kpc')/2
         else:
             self.center = pnb.array.SimArray(np.zeros((self.length, 3)), units='kpc')
             if 'phi' in self.new_catalogue[1].loadable_keys():

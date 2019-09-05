@@ -293,7 +293,7 @@ def load_emissivity_file(filename, specific_elements=None, energy_band=[0.5, 2.0
             atom_list = f['atomic_numbers'][:]
             return {'cont': continuum_emission, 'line': lines_emission, 'atomic_numbers': atom_list}
     except OSError:
-        print('Can\'t find emissivity document! Generating one now...')
+        print('Can\'t find emissivity file! Generating one now...')
         energy_bins = np.linspace(energy_band[0], energy_band[1], n_bins + 1)
         if specific_elements == None:
             elements = atomic_in_atomdb
