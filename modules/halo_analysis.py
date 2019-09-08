@@ -1,5 +1,5 @@
 """
-Tools for analysing halo properties. 
+Tools for analysing IGrM and halo properties. 
 Assume any necessary basic quantities is already 
 prepared as the derived arrays of the snapshot.
 """
@@ -515,6 +515,7 @@ class halo_props:
         else:
             for i in range(self.length):
                 j = self.haloid[i]
+                print('Copying original catalogue. Halo: {:7} / {}'.format(j, self.length), end='\r')
                 self.new_catalogue[j] = self.catalogue_original[j]
         self._have_new_catalogue = True
 

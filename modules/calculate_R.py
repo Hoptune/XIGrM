@@ -1,6 +1,6 @@
 '''
 This module contains codes for caluclating radii R200, 
-R500, etc (and corresponding mass) of halos.
+R500, etc (and corresponding masses) of halos.
 
 Based on Douglas Rennehan's code on HaloAnalysis.
 '''

@@ -1,7 +1,5 @@
 '''
-Generate a series of cooling rates and spectra 
-tabulated with different atomic numbers (axis 0) 
-and temperatures (axis 1).
+A series of codes to deal with atomdb data.
 
 Currently used atomdb version: 3.0.9
 

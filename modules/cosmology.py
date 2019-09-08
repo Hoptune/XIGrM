@@ -1,5 +1,5 @@
 """
-Calculate cosmological parameters.
+Calculate some necessary cosmological parameters.
 """
 import numpy as np
 

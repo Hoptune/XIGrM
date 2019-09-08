@@ -1,7 +1,7 @@
 """
-Tools for analysing halo X-ray properties using pynbody.
-Assume any necessary quantity is already prepared as 
-the derived arrays of the snapshot.
+Tools for calculating X-ray properties of the IGrM using pynbody. 
+Assume any necessary quantity is already prepared as the derived 
+arrays of the snapshot.
 """
 
 import array
