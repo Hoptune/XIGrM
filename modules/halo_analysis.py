@@ -398,7 +398,7 @@ class halo_props:
         list_length = np.array(list(halo_id_list)).max()
         for j in halo_id_list:
             i = j - 1
-            print('Calculating temperatures and luminosities... {:7} / {}'\
+            print('            Calculating entropies... {:7} / {}'\
                             .format(j, list_length), end='\r')
             center = self.center[i]
             halo = self.new_catalogue[j]
@@ -502,8 +502,8 @@ class halo_props:
         '''
         if not self._have_children:
             raise Exception('Must get_children first!')
-        self.new_catalogue = {}
         if include_:
+            self.new_catalogue = {}
             for i in range(self.length):
                 j = self.haloid[i]
                 print('Generating new catalogue... Halo: {:7} / {}'.format(j, self.length), end='\r')
@@ -513,10 +513,7 @@ class halo_props:
                     union_list = [j] + list(self.children[i])
                     self.new_catalogue[j] = get_union(self.catalogue_original, union_list)
         else:
-            for i in range(self.length):
-                j = self.haloid[i]
-                print('Copying original catalogue. Halo: {:7} / {}'.format(j, self.length), end='\r')
-                self.new_catalogue[j] = self.catalogue_original[j]
+            self.new_catalogue = self.catalogue_original
         self._have_new_catalogue = True
 
     def get_galaxy(self, g_low_limit):
@@ -690,7 +687,7 @@ class halo_props:
         list_length = np.array(list(halo_id_list)).max()
         for j in halo_id_list:
             i = j - 1
-            print('Calculating temperatures and luminosities... {:7} / {}'\
+            print('Calculating spectroscopic temperatures... {:7} / {}'\
                             .format(j, list_length), end='\r')
             center = self.center[i]
             halo = self.new_catalogue[j]
