@@ -30,7 +30,7 @@ for ra in radii_to_cal_sepcific_mass:
     specific_mass_field += [_masstype + ra for _masstype in masstype]
 mass_field = radius_field + specific_mass_field + ['total_star', 'self_star']#, 'total_sfgas', 'self_sfgas']
 temp_field = ['x', 'x_cont', 'mass', 'spec', 'spec_corr', \
-                'x_corr', 'x_corr_cont', 'mass_corr', 'x500', 'x2500']
+                'x_corr', 'x_corr_cont', 'mass_corr', 'spec500', 'spec2500']
 entropy_field = ['500', '2500']
 luminosity_field = ['x', 'x_cont', 'xb', 'xb_cont']
 # _cont for only considering continuum emission, _corr for core-corrected (0.15*R500-R500)
@@ -411,13 +411,13 @@ class halo_props:
                             & pnb.filt.LowPass('nh', '0.13 cm**-3')]
                     if len(hot_diffuse_gas_) < n_par:
                         self.prop['S'][r][i] = np.nan
-                        self.prop['T']['x' + r][i] = np.nan
+                        self.prop['T']['spec' + r][i] = np.nan
                     else:
                         tempTspec = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
                         avg_ne = (hot_diffuse_gas_['ne'] * hot_diffuse_gas_['volume']).sum() \
                                 / hot_diffuse_gas_['volume'].sum()
-                        self.prop['T']['x' + r][i] = tempTspec
+                        self.prop['T']['spec' + r][i] = tempTspec
                         self.prop['S'][r][i] = tempTspec/(avg_ne.in_units('cm**-3'))**(2, 3)
 
     def savedata(self, filename, field = default_field, halo_id_list=np.array([]), units=default_units):

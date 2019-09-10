@@ -72,6 +72,8 @@ spec_corr     Spectroscopic (core-corrected) temperature
 x_corr        Emission weighted (core-corrected) temperature using :math:`L_X`
 x_corr_cont   Emission weighted (core-corrected) temperature using :math:`L_{X, cont}`
 mass_corr     Mass weighted (core-corrected) temperature
+spec500       Spectroscopic temperature at :math:`R_{500}` (used when calculating entropy)
+spec2500      Spectroscopic temperature at :math:`R_{2500}` (used when calculating entropy)
 ============  ===========
 
 S (calculated within a thin spherical shell with default thickness = 1 kpc):
