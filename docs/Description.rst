@@ -88,9 +88,9 @@ useful, see Halo Analysis Module for details.
 
 Examples
 ----------
-Though the sricpts below is written in a .py file, I strongly recommand 
-using jupyter notebook to do the following analysis, just like the one done 
-in `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ .
+Though the sricpts below is written in a .py file, Jupyter Notebook is 
+strongly recommand for doing the following analysis, just like the one 
+done in `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ .
 
 .. literalinclude:: ../example/example.py
 
