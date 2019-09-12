@@ -91,7 +91,7 @@ useful, see Halo Analysis Module for details.
 Examples
 ----------
 Though the sricpts below is written in a .py file, Jupyter Notebook is 
-strongly recommand for doing the following analysis, just like the one 
+strongly recommanded for doing the following analysis, just like the one 
 done in `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ .
 
 .. literalinclude:: ../example/example.py

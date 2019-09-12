@@ -21,6 +21,11 @@ import pytspec as pt
 # some constants
 m_p = astroc.m_p.cgs.value
 k_B = astroc.k_B.cgs.value
+# Metal abundance in AG89
+element_numbers = np.sort(ppat.atomic_in_atomdb)
+element_abundances = ppat.AG89_abundances(element_numbers)
+element_masses = ppat.get_atomic_masses(element_numbers)
+Z_ag89 = (element_abundances*element_masses)[2:].sum()/(element_abundances*element_masses).sum()
 
 def cal_tweight(halo, weight_type='Lx'):
     """
@@ -70,7 +75,6 @@ def cal_tspec(hdgas, cal_f, datatype):
     """
 
     cal_f = cal_f.encode('utf-8')
-    Z_ag89 = 0.0213
     k_B_with_units = pnb.units.Unit('cm**2 g s**-2 K**-1') * k_B
     
     #hdgas = gas#[pnb.filt.HighPass('temp', '5e5 K')&pnb.filt.LowPass('nh', '0.13 cm**-3')] # short for hot diffuse
