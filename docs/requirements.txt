@@ -2,9 +2,9 @@ numpydoc
 astropy
 wget
 sphinx
+numpy
 scipy
 requests
 joblib
 pynbody
 pyatomdb
-numpy
