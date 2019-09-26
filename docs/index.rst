@@ -18,7 +18,7 @@ of IGrM (Intragroup Medium) in cosmological simulations based on `pynbody <http:
 
 The package consists of six parts:
 
-- :doc:`pyatomdb </prepare_pyatomdb>` : A series of codes to deal with atomdb data.
+- :doc:`prepare_pyatomdb </prepare_pyatomdb>` : A series of codes to deal with atomdb data.
 - :doc:`cosmology </cosmology>` : Calculate some necessary cosmological parameters.
 - :doc:`gas_properties </gas_properties>` : A series of codes to generate basic information of gas particles required by following analysing.
 - :doc:`X_properties </X_properties>` : Tools for analysing X-ray properties of the IGrM.

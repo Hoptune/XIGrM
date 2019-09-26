@@ -2,6 +2,7 @@ numpydoc
 astropy
 wget
 sphinx
+numpy
 scipy
 requests
 joblib
