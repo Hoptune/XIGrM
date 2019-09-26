@@ -204,7 +204,7 @@ class halo_props:
         self.get_group_list(N_galaxy)
         self.get_center()
     
-    def calcu_radii_masses(self, halo_id_list=np.array([]), rdict=None, precision=1e-2, rmax=None):
+    def calcu_radii_masses(self, halo_id_list=[], rdict=None, precision=1e-2, rmax=None):
         '''
         Calculate radii (Rvir, R200, etc) and corresponding masses.
 
@@ -212,11 +212,11 @@ class halo_props:
         -----------
         halo_id_list
             List of halo_ids to calculate radii and masses. 
-            If set to None, then will use self.group_list.
-        rdict
+            If set to empty list, then will use self.group_list.
+        rdict : dict
             names and values for overdensity factors. Default is: 
             {'vir': self.ovdens, '200': 200, '500': 500, '2500': 2500}
-        precision
+        precision : float
             Precision for calculate radius. See get_index() in 
             calculate_R.py documentation for detail.
         rmax
@@ -250,7 +250,7 @@ class halo_props:
             t2 = time.time()
         self._have_radii = True
     
-    def calcu_specific_masses(self, halo_id_list=np.array([]), \
+    def calcu_specific_masses(self, halo_id_list=[], \
                 calcu_field=radii_to_cal_sepcific_mass):
         '''
         Calculate some specific masses, such as baryon, IGrM, etc.
@@ -259,7 +259,7 @@ class halo_props:
         -----------
         halo_id_list
             List of halo_ids to calculate masses. 
-            If set to None, then will use self.group_list.
+            If set to empty list, then will use self.group_list.
         calcu_field
             Radii to calculate specific masses within.
         '''
@@ -299,7 +299,7 @@ class halo_props:
                                 + self.prop['M']['ism' + r][i]
                     self.prop['M']['igrm' + r][i] = hot_diffuse_gas_['mass'].sum()
 
-    def calcu_temp_lumi(self, cal_file, halo_id_list=np.array([]), \
+    def calcu_temp_lumi(self, cal_file, halo_id_list=[], \
                     core_corr_factor=0.15, calcu_field='500'):
         '''
         Calculate all the temperatures and luminosities listed in
@@ -311,7 +311,7 @@ class halo_props:
             Calibration file used for calculating Tspec.
         halo_id_list
             List of halo_ids to calculate temperatures 
-            and luminosities. If set to None, then will use 
+            and luminosities. If set to empty list, then will use 
             self.group_list.
         core_corr_factor
             Inner radius for calculating core-corrected 
@@ -366,8 +366,8 @@ class halo_props:
 
         self._have_temp = True
 
-    def calcu_entropy(self, cal_file, n_par=9, halo_id_list=np.array([]), \
-                calcu_field=entropy_field, thickness=pnb.array.SimArray(1, 'kpc')):
+    def calcu_entropy(self, cal_file, n_par=9, halo_id_list=[], \
+                calcu_field=entropy_field, thickness=1):
         '''
         Calculate all entropy within a thin spherical shell 
         centered at halo.
@@ -381,12 +381,13 @@ class halo_props:
             below which entropy will not be calculated.
         halo_id_list
             List of halo_ids to calculate entropies. 
-            If set to None, then will use self.group_list.
+            If set to empty list, then will use self.group_list.
         calcu_field
             Radii of the thin shell to calculate entropies.
-        thickness
-            Thickness of the spherical shell.
+        thickness : float
+            Thickness of the spherical shell. Default in kpc.
         '''
+        thickness = pnb.array.SimArray(thickness, 'kpc')
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
@@ -420,7 +421,7 @@ class halo_props:
                         self.prop['T']['spec' + r][i] = tempTspec
                         self.prop['S'][r][i] = tempTspec/(avg_ne.in_units('cm**-3'))**(2, 3)
 
-    def savedata(self, filename, field = default_field, halo_id_list=np.array([]), units=default_units):
+    def savedata(self, filename, field = default_field, halo_id_list=[], units=default_units):
         '''
         Save the data in hdf5 format. Will save halo_id_list 
         (key: 'halo_id') and the quantities listed in field.
@@ -432,7 +433,7 @@ class halo_props:
         field
             Type of information to save.
         halo_id_list
-            List of halo_ids to save.If set to None, 
+            List of halo_ids to save.If set to empty list, 
             then will use self.group_list.
         units
             Convert the data into specified inits and save.
@@ -599,7 +600,7 @@ class halo_props:
         self.group_list += 1
         self._have_group = True
     
-    def calcu_tx_lx(self, halo_id_list=np.array([]), \
+    def calcu_tx_lx(self, halo_id_list=[], \
                     core_corr_factor=0.15, calcu_field='500'):
         '''
         Calculate X-ray luminosities and emission weighted 
@@ -609,7 +610,7 @@ class halo_props:
         -----------
         halo_id_list
             List of halo_ids to calculate temperatures on. 
-            If set to None, then will use self.group_list.
+            If set to empty list, then will use self.group_list.
         core_corr_factor
             Inner radius for calculating core-corrected 
             temperatures. Gas particles within 
@@ -655,7 +656,7 @@ class halo_props:
                 self.prop['T']['x_corr_cont'][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
     
-    def calcu_tspec(self, cal_file, halo_id_list=np.array([]), \
+    def calcu_tspec(self, cal_file, halo_id_list=[], \
                     core_corr_factor=0.15, calcu_field='500'):
         '''
         Calculate spectroscopic temperatures based on Douglas's 
@@ -667,7 +668,8 @@ class halo_props:
             Calibration file used for calculating Tspec.
         halo_id_list
             List of halo_ids to calculate temperatures and 
-            luminosities. If set to None, then will use self.group_list.
+            luminosities. If set to empty list, then will use 
+            self.group_list.
         core_corr_factor
             Inner radius for calculating core-corrected temperatures. 
             Gas particles within (core_corr_factor*R, R) will be used 
