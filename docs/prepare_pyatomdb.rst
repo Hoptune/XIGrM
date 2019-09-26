@@ -1,4 +1,4 @@
-Pyatomdb Module
+Pyatomdb Relevant Module
 ========================
 
 .. automodule:: modules.prepare_pyatomdb
