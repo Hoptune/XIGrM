@@ -6,5 +6,4 @@ numpy
 scipy
 requests
 joblib
-pynbody
 pyatomdb
