@@ -11,7 +11,7 @@ import modules.gas_properties as g_p
 import modules.halo_analysis as h_a
 import modules.prepare_pyatomdb as ppat
 
-# Load snapshot
+# Load simulation snapshot
 data_file = 'data_file'
 param_file = 'param_file'
 s = pnb.load(data_file, paramfile = param_file)
@@ -22,13 +22,13 @@ s.physical_units()
 # use comoving units to interprete GIZMO internal energy while GIZMO
 # actually uses physical units by default. See 
 # http://www.tapir.caltech.edu/~phopkins/Site/GIZMO_files/gizmo_documentation.html#snaps 
-# for detail. And this line only applys to GIZMO result, for tipsy, you can safely skip this line.
+# for details.
 s.gas['u'] /= pnb.array.SimArray(s.properties['a'], units='1')
 
 s.gas['X_H'] = 1-s.gas['metals'][:,0]-s.gas['metals'][:,1] # hydrogen mass fraction
 s.gas['nh'] = g_p.nh(s) # Hydrogen number density
 
-# From internal energy to temperature. Again, skip this line for tipsy.
+# From internal energy to temperature. Skip this line for tipsy outputs.
 s.gas['temp'] = g_p.temp(s)
 
 s.gas['ElectronAbundance'].units = '1'
