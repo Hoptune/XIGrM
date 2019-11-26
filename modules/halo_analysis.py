@@ -367,7 +367,7 @@ class halo_props:
         self._have_temp = True
 
     def calcu_entropy(self, cal_file, n_par=9, halo_id_list=[], \
-                calcu_field=entropy_field, thickness=1):
+                calcu_field=entropy_field, thickness=1, volume_type='gas'):
         '''
         Calculate all entropy within a thin spherical shell 
         centered at halo.
@@ -386,6 +386,11 @@ class halo_props:
             Radii of the thin shell to calculate entropies.
         thickness : float
             Thickness of the spherical shell. Default in kpc.
+        volume : str
+            Volume used for calculating average electron number 
+            density. 'gas' means only using the sum over the volumes 
+            of all hot diffuse gas particles. 'full' means to use 
+            4*pi*R^2*dR.
         '''
         thickness = pnb.array.SimArray(thickness, 'kpc')
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
@@ -416,8 +421,14 @@ class halo_props:
                     else:
                         tempTspec = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
+                        if volume_type == 'gas':
+                            temp_volume = hot_diffuse_gas_['volume'].sum()
+                        elif volume_type == 'full':
+                            temp_volume = 4*np.pi*R**2*thickness
+                        else:
+                            raise Exception("volume_type is not accepted!")
                         avg_ne = (hot_diffuse_gas_['ne'] * hot_diffuse_gas_['volume']).sum() \
-                                / hot_diffuse_gas_['volume'].sum()
+                                / temp_volume
                         self.prop['T']['spec' + r][i] = tempTspec
                         self.prop['S'][r][i] = tempTspec/(avg_ne.in_units('cm**-3'))**(2, 3)
 
