@@ -385,14 +385,15 @@ class halo_props:
         calcu_field
             Radii of the thin shell to calculate entropies.
         thickness : float
-            Thickness of the spherical shell. Default in kpc.
+            Thickness Devided by radius of the spherical shell, i.e., 
+            the shell will be R~(1+thickness)*R. 
         volume : str
             Volume used for calculating average electron number 
             density. 'gas' means only using the sum over the volumes 
             of all hot diffuse gas particles. 'full' means to use 
             4*pi*R^2*dR.
         '''
-        thickness = pnb.array.SimArray(thickness, 'kpc')
+        # thickness = pnb.array.SimArray(thickness, 'kpc')
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
