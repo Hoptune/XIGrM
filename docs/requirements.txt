@@ -6,4 +6,5 @@ numpy
 scipy
 requests
 joblib
+h5py
 pyatomdb

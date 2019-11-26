@@ -90,6 +90,9 @@ useful, see Halo Analysis Module for details.
 
 Examples
 ----------
+The following codes show how to use this package to analyze a simulation using 
+`GIZMO <http://www.tapir.caltech.edu/~phopkins/Site/GIZMO_files/gizmo_documentation.html>`_. 
+For other outputs, you may need to change some details. 
 Though the sricpts below is written in a .py file, Jupyter Notebook is 
 strongly recommanded for doing the following analysis, just like the one 
 done in `Final_Tutorial.ipynb <https://github.com/Hoptune/XIGrM/blob/master/Final_Tutorial.ipynb>`_ .
