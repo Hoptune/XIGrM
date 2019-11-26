@@ -425,7 +425,7 @@ class halo_props:
                         if volume_type == 'gas':
                             temp_volume = hot_diffuse_gas_['volume'].sum()
                         elif volume_type == 'full':
-                            temp_volume = 4*np.pi*R**2*thickness
+                            temp_volume = 4*np.pi*R**2*thickness*R
                         else:
                             raise Exception("volume_type is not accepted!")
                         avg_ne = (hot_diffuse_gas_['ne'] * hot_diffuse_gas_['volume']).sum() \
