@@ -84,8 +84,8 @@ def get_radius(halo, overdensities = np.array([]), rho_crit=None, precision=1e-2
     if rmax != None:
         radius  = rmax
         particles_within_r, = np.where(halor <= radius)
-        halomass = halomass[particles_within_r]
-        mass = halomass.sum()
+        _halomass = halomass[particles_within_r]
+        mass = _halomass.sum()
     overdensities = np.array(overdensities)
     if len(overdensities) > 1:
         overdensities.sort() # From low density to high density
