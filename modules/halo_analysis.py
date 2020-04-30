@@ -251,7 +251,8 @@ class halo_props:
         self._have_radii = True
     
     def calcu_specific_masses(self, halo_id_list=[], \
-                calcu_field=radii_to_cal_sepcific_mass):
+                calcu_field=radii_to_cal_sepcific_mass, \
+                    temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
         '''
         Calculate some specific masses, such as baryon, IGrM, etc.
 
@@ -262,6 +263,12 @@ class halo_props:
             If set to empty list, then will use self.group_list.
         calcu_field
             Radii to calculate specific masses within.
+        temp_cut
+            Temperature limit above which gas particles are 
+            considered as hot.
+        nh_cut
+            nh limit above which gas particles are considered 
+            as star forming.
         '''
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -283,11 +290,11 @@ class halo_props:
                 for r in calcu_field:
                     # Apply filters
                     subsim = halo[pnb.filt.Sphere(self.prop['R'][i:i+1][r].in_units('kpc'))]
-                    cold_diffuse_gas = subsim.gas[pnb.filt.LowPass('temp', '5e5 K') & \
-                            pnb.filt.LowPass('nh', '0.13 cm**-3')]
-                    ISM = subsim.gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
-                    hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', '5e5 K') & \
-                            pnb.filt.LowPass('nh', '0.13 cm**-3')]
+                    cold_diffuse_gas = subsim.gas[pnb.filt.LowPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut)]
+                    ISM = subsim.gas[pnb.filt.HighPass('nh', nh_cut)]
+                    hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut)]
                     
                     # Calculate masses
                     self.prop['M']['star' + r][i] = subsim.star['mass'].sum()
@@ -300,7 +307,7 @@ class halo_props:
                     self.prop['M']['igrm' + r][i] = hot_diffuse_gas_['mass'].sum()
 
     def calcu_temp_lumi(self, cal_file, halo_id_list=[], \
-                    core_corr_factor=0.15, calcu_field='500'):
+                    core_corr_factor=0.15, calcu_field='500', temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
         '''
         Calculate all the temperatures and luminosities listed in
         temp_field and luminosity_field. 
@@ -320,6 +327,12 @@ class halo_props:
         calcu_field
             Radius to calculate temperatures and luminosities 
             within. Must be in radius_field. Default: R_500.
+        temp_cut
+            Temperature limit above which gas particles are 
+            considered as hot.
+        nh_cut
+            nh limit above which gas particles are considered 
+            as star forming.
         '''
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -340,8 +353,8 @@ class halo_props:
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
                 subsim = halo[pnb.filt.Sphere(R)]
-                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', '5e5 K') & \
-                            pnb.filt.LowPass('nh', '0.13 cm**-3')]
+                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut)]
                 # cal_tweight can return the sum of weight_type at the same time.
                 self.prop['T']['x'][i], self.prop['L']['x'][i] = \
                         cal_tweight(hot_diffuse_gas_, weight_type='Lx')
@@ -367,7 +380,8 @@ class halo_props:
         self._have_temp = True
 
     def calcu_entropy(self, cal_file, n_par=9, halo_id_list=[], \
-                calcu_field=entropy_field, thickness=0.05, volume_type='gas'):
+                calcu_field=entropy_field, thickness=0.05, volume_type='gas', \
+                    temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
         '''
         Calculate all entropy within a thin spherical shell 
         centered at halo.
@@ -414,8 +428,8 @@ class halo_props:
                 for r in calcu_field:
                     R = self.prop['R'][i:i+1][r].in_units('kpc')
                     subgas = halo.gas[pnb.filt.Annulus(R, (thickness + 1) * R)]
-                    hot_diffuse_gas_ = subgas[pnb.filt.HighPass('temp', '5e5 K') \
-                            & pnb.filt.LowPass('nh', '0.13 cm**-3')]
+                    hot_diffuse_gas_ = subgas[pnb.filt.HighPass('temp', temp_cut) \
+                            & pnb.filt.LowPass('nh', nh_cut)]
                     if len(hot_diffuse_gas_) < n_par:
                         self.prop['S'][r][i] = np.nan
                         self.prop['T']['spec' + r][i] = np.nan
@@ -613,7 +627,8 @@ class halo_props:
         self._have_group = True
     
     def calcu_tx_lx(self, halo_id_list=[], \
-                    core_corr_factor=0.15, calcu_field='500'):
+                    core_corr_factor=0.15, calcu_field='500', \
+                    temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
         '''
         Calculate X-ray luminosities and emission weighted 
         temperatures listed in temp_field and luminosity_field. 
@@ -630,6 +645,12 @@ class halo_props:
         calcu_field
             Radius to calculate temperatures and luminosities 
             within. Must be in radius_field. Default: R_500.
+        temp_cut
+            Temperature limit above which gas particles are 
+            considered as hot.
+        nh_cut
+            nh limit above which gas particles are considered 
+            as star forming.
         '''
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -652,8 +673,8 @@ class halo_props:
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
                 subsim = halo[pnb.filt.Sphere(R)]
-                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', '5e5 K') & \
-                            pnb.filt.LowPass('nh', '0.13 cm**-3')]
+                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut)]
                 # cal_tweight can return the sum of weight_type at the same time.
                 self.prop['T']['x'][i], self.prop['L']['x'][i] = \
                         cal_tweight(hot_diffuse_gas_, weight_type='Lx')
@@ -669,7 +690,7 @@ class halo_props:
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
     
     def calcu_tspec(self, cal_file, halo_id_list=[], \
-                    core_corr_factor=0.15, calcu_field='500'):
+                    core_corr_factor=0.15, calcu_field='500', temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
         '''
         Calculate spectroscopic temperatures based on Douglas's 
         pytspec module.
@@ -689,6 +710,12 @@ class halo_props:
         calcu_field
             Radius to calculate temperatures and luminosities within. 
             Must be in radius_field. Default: R_500.
+        temp_cut
+            Temperature limit above which gas particles are 
+            considered as hot.
+        nh_cut
+            nh limit above which gas particles are considered 
+            as star forming.
         '''
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -711,8 +738,8 @@ class halo_props:
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
                 subsim = halo[pnb.filt.Sphere(R)]
-                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', '5e5 K') & \
-                            pnb.filt.LowPass('nh', '0.13 cm**-3')]
+                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut)]
 
                 self.prop['T']['spec'][i] = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
