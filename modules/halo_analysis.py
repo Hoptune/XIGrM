@@ -34,13 +34,14 @@ temp_field = ['x', 'x_cont', 'mass', 'spec', 'spec_corr', \
 entropy_field = ['500', '2500']
 luminosity_field = ['x', 'x_cont', 'xb', 'xb_cont']
 ne_field = ['500', '2500']
+ne_field = ['500', '2500']
 # _cont for only considering continuum emission, _corr for core-corrected (0.15*R500-R500)
 # xb for broad band X-ray (0.1-2.4 keV) in our case.
 
 default_field = {'R': radius_field, 'M': mass_field, 'T': temp_field, \
-            'S': entropy_field, 'L': luminosity_field, 'ne': ne_field}
+            'S': entropy_field, 'L': luminosity_field, 'ne': ne_field, 'nh': nh_field}
 default_units = {'T': 'keV', 'L': 'erg s**-1', 'R': 'kpc', 'M': 'Msol', \
-            'S': 'keV cm**2', 'ne': 'cm**-3'}
+            'S': 'keV cm**2', 'ne': 'cm**-3', 'nh': 'cm**-3'}
 
 class halo_props:
     '''
@@ -447,8 +448,11 @@ class halo_props:
                             raise Exception("volume_type is not accepted!")
                         avg_ne = ((hot_diffuse_gas_['ne'] * hot_diffuse_gas_['volume']).sum() \
                                 / temp_volume).in_units('cm**-3')
+                        avg_nh = ((hot_diffuse_gas_['nh'] * hot_diffuse_gas_['volume']).sum() \
+                                / temp_volume).in_units('cm**-3')
                         self.prop['T']['spec' + r][i] = tempTspec
                         self.prop['ne'][r][i] = avg_ne
+                        self.prop['nh'][r][i] = avg_nh
                         self.prop['S'][r][i] = tempTspec/(avg_ne)**(2, 3)
 
     def savedata(self, filename, field = default_field, halo_id_list=[], units=default_units):
