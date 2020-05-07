@@ -34,7 +34,7 @@ temp_field = ['x', 'x_cont', 'mass', 'spec', 'spec_corr', \
 entropy_field = ['500', '2500']
 luminosity_field = ['x', 'x_cont', 'xb', 'xb_cont']
 ne_field = ['500', '2500']
-ne_field = ['500', '2500']
+nh_field = ['500', '2500']
 # _cont for only considering continuum emission, _corr for core-corrected (0.15*R500-R500)
 # xb for broad band X-ray (0.1-2.4 keV) in our case.
 
