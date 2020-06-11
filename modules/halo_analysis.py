@@ -32,7 +32,7 @@ mass_field = radius_field + specific_mass_field + ['total_star', 'self_star']#, 
 temp_field = ['x', 'x_cont', 'mass', 'spec', 'spec_corr', \
                 'x_corr', 'x_corr_cont', 'mass_corr', 'spec500', 'spec2500']
 entropy_field = ['500', '2500']
-luminosity_field = ['x', 'x_cont', 'xb', 'xb_cont']
+luminosity_field = ['x', 'x_cont', 'xb', 'xb_cont', 'x_corr', 'xb_corr']
 ne_field = ['500', '2500']
 nh_field = ['500', '2500']
 # _cont for only considering continuum emission, _corr for core-corrected (0.15*R500-R500)
@@ -376,7 +376,8 @@ class halo_props:
 
                 self.prop['T']['spec_corr'][i] = pnb.array.SimArray(cal_tspec(corr_hot_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
-                self.prop['T']['x_corr'][i], _ = cal_tweight(corr_hot_, weight_type='Lx')
+                self.prop['T']['x_corr'][i], self.prop['L']['x_corr'] = cal_tweight(corr_hot_, weight_type='Lx')
+                self.prop['L']['xb_corr'] = corr_hot_['Lxb'].sum()
                 self.prop['T']['x_corr_cont'][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
                 self.prop['T']['mass_corr'][i], _ = cal_tweight(corr_hot_, weight_type='mass')
