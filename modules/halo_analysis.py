@@ -239,10 +239,9 @@ class halo_props:
             rdict = {'vir': self.ovdens, '200': 200, '500': 500, '2500': 2500}
         t1 = 0; t2 = 0
         list_length = np.array(list(halo_id_list)).max()
+        k = 0
         for j in halo_id_list:
             i = j - 1
-            print('Calculating radii and masses... {:7} / {}, time: \
-                        {:.5f}s'.format(j, list_length, t2 - t1), end='\r')
             prop = self.dict[i]
             t1 = time.time()
             MassRadii = cR.get_radius(self.new_catalogue[j], \
@@ -252,6 +251,10 @@ class halo_props:
                 self.prop['R'][key][i] = MassRadii[1][rdict[key]]
                 self.prop['M'][key][i] = MassRadii[0][rdict[key]]
             t2 = time.time()
+            if (i // 100) != (k // 100):
+                print('Calculating radii and masses... {:7} / {}, time: \
+                        {:.5f}s'.format(j, list_length, t2 - t1), end='\r')
+            k = i
         self._have_radii = True
     
     def calcu_specific_masses(self, halo_id_list=[], \
@@ -283,9 +286,10 @@ class halo_props:
             raise Exception('Must get_radii_masses first!')
         
         list_length = np.array(list(halo_id_list)).max()
+        k = 0
         for j in halo_id_list:
             i = j - 1
-            print('Calculating specific masses... {:7} / {}'.format(j, list_length), end='\r')
+
             prop = self.dict[i]
             center = self.center[i]
             halo = self.new_catalogue[j]
@@ -309,6 +313,9 @@ class halo_props:
                     self.prop['M']['cold' + r][i] = cold_diffuse_gas['mass'].sum() \
                                 + self.prop['M']['ism' + r][i]
                     self.prop['M']['igrm' + r][i] = hot_diffuse_gas_['mass'].sum()
+            if (i // 100) != (k // 100):
+                print('Calculating specific masses... {:7} / {}'.format(j, list_length), end='\r')
+            k = i
 
     def calcu_temp_lumi(self, cal_file, halo_id_list=[], \
                     core_corr_factor=0.15, calcu_field='500', temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
@@ -347,10 +354,9 @@ class halo_props:
             raise Exception('Must get_radii_masses first!')
         
         list_length = np.array(list(halo_id_list)).max()
+        k = 0
         for j in halo_id_list:
             i = j - 1
-            print('Calculating temperatures and luminosities... {:7} / {}'\
-                            .format(j, list_length), end='\r')
             center = self.center[i]
             halo = self.new_catalogue[j]
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
@@ -381,6 +387,10 @@ class halo_props:
                 self.prop['T']['x_corr_cont'][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
                 self.prop['T']['mass_corr'][i], _ = cal_tweight(corr_hot_, weight_type='mass')
+            if (i // 100) != (k // 100):
+                print('Calculating temperatures and luminosities... {:7} / {}'\
+                            .format(j, list_length), end='\r')
+            k = i
 
         self._have_temp = True
 
@@ -422,10 +432,9 @@ class halo_props:
             raise Exception('Must get_radii_masses first!')
 
         list_length = np.array(list(halo_id_list)).max()
+        k = 0
         for j in halo_id_list:
             i = j - 1
-            print('            Calculating entropies... {:7} / {}'\
-                            .format(j, list_length), end='\r')
             center = self.center[i]
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
@@ -455,6 +464,10 @@ class halo_props:
                         self.prop['ne'][r][i] = avg_ne
                         self.prop['nh'][r][i] = avg_nh
                         self.prop['S'][r][i] = tempTspec/(avg_ne)**(2, 3)
+            if (i // 100) != (k // 100):
+                print('            Calculating entropies... {:7} / {}'\
+                            .format(j, list_length), end='\r')
+            k = i
 
     def savedata(self, filename, field = default_field, halo_id_list=[], units=default_units):
         '''
