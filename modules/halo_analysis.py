@@ -29,7 +29,7 @@ specific_mass_field = []
 for ra in radii_to_cal_sepcific_mass:
     specific_mass_field += [_masstype + ra for _masstype in masstype]
 mass_field = radius_field + specific_mass_field + ['total_star', 'self_star']#, 'total_sfgas', 'self_sfgas']
-temp_field = ['x', 'x_cont', 'mass', 'spec', 'spec_corr', \
+temp_field = ['x', 'x_cont', 'xb', 'xb_corr', 'mass', 'spec', 'spec_corr', \
                 'x_corr', 'x_corr_cont', 'mass_corr', 'spec500', 'spec2500']
 entropy_field = ['500', '2500']
 luminosity_field = ['x', 'x_cont', 'xb', 'xb_cont', 'x_corr', 'xb_corr']
@@ -373,7 +373,8 @@ class halo_props:
                 self.prop['T']['mass'][i], _= cal_tweight(hot_diffuse_gas_, weight_type='mass')
                 self.prop['T']['spec'][i] = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
-                self.prop['L']['xb'][i] = hot_diffuse_gas_['Lxb'].sum()
+                self.prop['T']['xb'][i], self.prop['L']['xb'][i] = \
+                        cal_tweight(hot_diffuse_gas_, weight_type='Lxb')
                 self.prop['L']['xb_cont'][i] = hot_diffuse_gas_['Lxb_cont'].sum()
 
                 # Core-corrected temperatures:
@@ -383,7 +384,7 @@ class halo_props:
                 self.prop['T']['spec_corr'][i] = pnb.array.SimArray(cal_tspec(corr_hot_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
                 self.prop['T']['x_corr'][i], self.prop['L']['x_corr'] = cal_tweight(corr_hot_, weight_type='Lx')
-                self.prop['L']['xb_corr'] = corr_hot_['Lxb'].sum()
+                self.prop['T']['xb_corr'][i], self.prop['L']['xb_corr'] = cal_tweight(corr_hot_, weight_type='Lxb')
                 self.prop['T']['x_corr_cont'][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
                 self.prop['T']['mass_corr'][i], _ = cal_tweight(corr_hot_, weight_type='mass')
