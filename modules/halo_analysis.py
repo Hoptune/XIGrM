@@ -383,8 +383,8 @@ class halo_props:
 
                 self.prop['T']['spec_corr'][i] = pnb.array.SimArray(cal_tspec(corr_hot_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
-                self.prop['T']['x_corr'][i], self.prop['L']['x_corr'] = cal_tweight(corr_hot_, weight_type='Lx')
-                self.prop['T']['xb_corr'][i], self.prop['L']['xb_corr'] = cal_tweight(corr_hot_, weight_type='Lxb')
+                self.prop['T']['x_corr'][i], self.prop['L']['x_corr'][i] = cal_tweight(corr_hot_, weight_type='Lx')
+                self.prop['T']['xb_corr'][i], self.prop['L']['xb_corr'][i] = cal_tweight(corr_hot_, weight_type='Lxb')
                 self.prop['T']['x_corr_cont'][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
                 self.prop['T']['mass_corr'][i], _ = cal_tweight(corr_hot_, weight_type='mass')
