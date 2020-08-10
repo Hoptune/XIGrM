@@ -28,7 +28,7 @@ radii_to_cal_sepcific_mass = ['200', '500']
 specific_mass_field = []
 for ra in radii_to_cal_sepcific_mass:
     specific_mass_field += [_masstype + ra for _masstype in masstype]
-mass_field = radius_field + specific_mass_field + ['total_star', 'self_star']#, 'total_sfgas', 'self_sfgas']
+mass_field = radius_field + specific_mass_field + ['total_star', 'self_star', 'total_sfgas', 'self_sfgas']
 temp_field = ['x', 'x_cont', 'xb', 'xb_corr', 'mass', 'spec', 'spec_corr', \
                 'x_corr', 'x_corr_cont', 'mass_corr', 'spec500', 'spec2500']
 entropy_field = ['500', '2500']
@@ -620,7 +620,7 @@ class halo_props:
                 self_Mstar = self.prop['M']['total_star'][i] - children_union_within_.star['mass'].sum()
                 self_Msfgas = self.prop['M']['total_sfgas'][i] - sf_gas_union['mass'].sum()
             self.prop['M']['self_star'][i] = self_Mstar
-            # self.prop['M']['self_sfgas'][i] = self_Msfgas
+            self.prop['M']['self_sfgas'][i] = self_Msfgas
             try:
                 if mode == 'only stellar':
                     condition = (self_Mstar > 0)
