@@ -570,7 +570,7 @@ class halo_props:
             self.new_catalogue = self.catalogue_original
         self._have_new_catalogue = True
 
-    def get_galaxy(self, g_low_limit):
+    def get_galaxy(self, g_low_limit, mode='only stellar'):
         '''
         Generate list of galaxies for each host halo. The subsubhalo 
         will also be included in the hosthalo galaxy list. And it won't 
@@ -599,9 +599,9 @@ class halo_props:
             j = self.haloid[i]
             print('Calculating total stellar masses... Halo: {:7} / {}'.format(j, self.length), end='\r')
             self.prop['M']['total_star'][i] = self.new_catalogue[j].star['mass'].sum()
-            #sf_gas = self.new_catalogue[j].gas[pnb.filt.LowPass('temp', '3e4 K')]
+            sf_gas = self.new_catalogue[j].gas[pnb.filt.LowPass('temp', '3e4 K')]
             # sf_gas = self.new_catalogue[j].gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
-            #self.prop['M']['total_sfgas'][i] = sf_gas['mass'].sum()
+            self.prop['M']['total_sfgas'][i] = sf_gas['mass'].sum()
             # sf_gas, i.e., star forming gas, is used in the definition of resolved galaxies in Liang's Figure2.
             # But seems that Liang didn't plot Figure 2 using the concept of resolved galaxies.
         low_limit = g_low_limit.in_units(self.prop['M']['total_star'].units)
@@ -611,18 +611,22 @@ class halo_props:
             children_list = np.array(list(self.children[i]))
             if len(children_list) == 0:
                 self_Mstar = self.prop['M']['total_star'][i]
-                #self_Msfgas = self.prop['M']['total_sfgas'][i]
+                self_Msfgas = self.prop['M']['total_sfgas'][i]
             else:
                 children_union = get_union(self.new_catalogue, list(children_list))
                 children_union_within_ = self.new_catalogue[j].intersect(children_union)
-                #sf_gas_union = children_union.gas[pnb.filt.LowPass('temp', '3e4 K')]
+                sf_gas_union = children_union_within_.gas[pnb.filt.LowPass('temp', '3e4 K')]
                 # sf_gas_union = children_union.gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
                 self_Mstar = self.prop['M']['total_star'][i] - children_union_within_.star['mass'].sum()
-                #self_Msfgas = self.prop['M']['total_sfgas'][i] - sf_gas_union['mass'].sum()
+                self_Msfgas = self.prop['M']['total_sfgas'][i] - sf_gas_union['mass'].sum()
             self.prop['M']['self_star'][i] = self_Mstar
             # self.prop['M']['self_sfgas'][i] = self_Msfgas
             try:
-                if self_Mstar > 0:# + self_Msfgas > low_limit:
+                if mode == 'only stellar':
+                    condition = (self_Mstar > 0)
+                elif mode == 'include cold gas':
+                    condition = (self_Mstar + self_Msfgas > low_limit)
+                if condition:
                     self.galaxy_list.append(j)
                     temp_tophost = self.tophost[i]
                     self.galaxies[temp_tophost-1].add(j)
