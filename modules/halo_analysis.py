@@ -185,7 +185,7 @@ class halo_props:
         self._have_new_catalogue = False
         self._have_center = False
 
-    def init_relationship(self, galaxy_low_limit, include_sub=False, N_galaxy=3):
+    def init_relationship(self, galaxy_low_limit, include_sub=False, galaxy_mode='only stellar', N_galaxy=3):
         '''
         Get basic information regarding groups, hosts, children, etc.
 
@@ -204,7 +204,7 @@ class halo_props:
         '''
         self.get_children()
         self.get_new_catalogue(include_ = include_sub)
-        self.get_galaxy(g_low_limit = galaxy_low_limit)
+        self.get_galaxy(g_low_limit = galaxy_low_limit, mode=galaxy_mode)
         self.get_group_list(N_galaxy)
         self.get_center()
     
