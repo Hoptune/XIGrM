@@ -611,13 +611,15 @@ class halo_props:
             children_list = np.array(list(self.children[i]))
             if len(children_list) == 0:
                 self_Mstar = self.prop['M']['total_star'][i]
+                # if mode == 'include cold gas':
                 self_Msfgas = self.prop['M']['total_sfgas'][i]
             else:
                 children_union = get_union(self.new_catalogue, list(children_list))
                 children_union_within_ = self.new_catalogue[j].intersect(children_union)
+                self_Mstar = self.prop['M']['total_star'][i] - children_union_within_.star['mass'].sum()
+                # if mode == 'include cold gas':
                 sf_gas_union = children_union_within_.gas[pnb.filt.LowPass('temp', '3e4 K')]
                 # sf_gas_union = children_union.gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
-                self_Mstar = self.prop['M']['total_star'][i] - children_union_within_.star['mass'].sum()
                 self_Msfgas = self.prop['M']['total_sfgas'][i] - sf_gas_union['mass'].sum()
             self.prop['M']['self_star'][i] = self_Mstar
             self.prop['M']['self_sfgas'][i] = self_Msfgas
