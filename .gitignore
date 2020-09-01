@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *Shao*Copy*
 _build/
+.vscode/
 
 # C extensions
 *.so
