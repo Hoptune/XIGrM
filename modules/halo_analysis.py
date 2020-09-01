@@ -110,7 +110,7 @@ class halo_props:
     group_list
         halo_id of the halo identified as group in the catalogue.
     '''
-    def __init__(self, halocatalogue, datatype, field=default_field, host_id_of_top_level=0):
+    def __init__(self, halocatalogue, datatype, field=default_field, host_id_of_top_level=0, verbose=True):
         '''
         Initialization routine.
 
@@ -134,6 +134,7 @@ class halo_props:
         init_zeros = np.zeros(self.length)
         self.host_id_of_top_level = host_id_of_top_level
         self.errorlist = [{}, {}, {}]
+        self.verbose = verbose
 
         self.rho_crit = pnb.analysis.cosmology.rho_crit(f=self.catalogue_original[1], unit='Msol kpc**-3')
         self.ovdens = cosmology.Delta_vir(self.catalogue_original[1])
@@ -141,7 +142,8 @@ class halo_props:
         self.dict = []
         for j in range(self.length):
             i = j + 1
-            print('Loading properties... {:7} / {}'.format(i, self.length), end='\r')
+            if self.verbose:
+                print('Loading properties... {:7} / {}'.format(i, self.length), end='\r')
             prop = self.catalogue_original[i].properties
             hid = prop['halo_id']
             if i != hid:
@@ -251,7 +253,7 @@ class halo_props:
                 self.prop['R'][key][i] = MassRadii[1][rdict[key]]
                 self.prop['M'][key][i] = MassRadii[0][rdict[key]]
             t2 = time.time()
-            if (i // 100) != (k // 100):
+            if ((i // 100) != (k // 100)) and self.verbose:
                 print('Calculating radii and masses... {:7} / {}, time: \
                         {:.5f}s'.format(j, list_length, t2 - t1), end='\r')
             k = i
@@ -313,7 +315,7 @@ class halo_props:
                     self.prop['M']['cold' + r][i] = cold_diffuse_gas['mass'].sum() \
                                 + self.prop['M']['ism' + r][i]
                     self.prop['M']['igrm' + r][i] = hot_diffuse_gas_['mass'].sum()
-            if (i // 100) != (k // 100):
+            if ((i // 100) != (k // 100)) and self.verbose:
                 print('Calculating specific masses... {:7} / {}'.format(j, list_length), end='\r')
             k = i
 
@@ -388,7 +390,7 @@ class halo_props:
                 self.prop['T']['x_corr_cont'][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
                 self.prop['T']['mass_corr'][i], _ = cal_tweight(corr_hot_, weight_type='mass')
-            if (i // 100) != (k // 100):
+            if ((i // 100) != (k // 100)) and self.verbose:
                 print('Calculating temperatures and luminosities... {:7} / {}'\
                             .format(j, list_length), end='\r')
             k = i
@@ -467,7 +469,7 @@ class halo_props:
                         self.prop['ne'][r][i] = avg_ne
                         self.prop['nh'][r][i] = avg_nh
                         self.prop['S'][r][i] = tempTspec/(avg_ne)**(2, 3)
-            if (i // 100) != (k // 100):
+            if ((i // 100) != (k // 100)) and self.verbose:
                 print('            Calculating entropies... {:7} / {}'\
                             .format(j, list_length), end='\r')
             k = i
@@ -518,7 +520,8 @@ class halo_props:
         self.children = [set() for _ in range(self.length)]
         for i in range(self.length):
             j = self.haloid[i]#j = i + 1
-            print('Generating children list... Halo: {:7} / {}'.format(j, self.length), end='\r')
+            if self.verbose:
+                print('Generating children list... Halo: {:7} / {}'.format(j, self.length), end='\r')
             prop = self.dict[i]
             hostID = prop['hostHalo']
             if j in self.errorlist[0]:
@@ -560,7 +563,8 @@ class halo_props:
             self.new_catalogue = {}
             for i in range(self.length):
                 j = self.haloid[i]
-                print('Generating new catalogue... Halo: {:7} / {}'.format(j, self.length), end='\r')
+                if self.verbose:
+                    print('Generating new catalogue... Halo: {:7} / {}'.format(j, self.length), end='\r')
                 if len(self.children[i]) == 0:
                     self.new_catalogue[j] = self.catalogue_original[j]
                 else:
@@ -597,7 +601,8 @@ class halo_props:
 
         for i in range(self.length):
             j = self.haloid[i]
-            print('Calculating total stellar masses... Halo: {:7} / {}'.format(j, self.length), end='\r')
+            if self.verbose:
+                print('Calculating total stellar masses... Halo: {:7} / {}'.format(j, self.length), end='\r')
             self.prop['M']['total_star'][i] = self.new_catalogue[j].star['mass'].sum()
             sf_gas = self.new_catalogue[j].gas[pnb.filt.LowPass('temp', '3e4 K')]
             # sf_gas = self.new_catalogue[j].gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
@@ -607,7 +612,8 @@ class halo_props:
         low_limit = g_low_limit.in_units(self.prop['M']['total_star'].units)
         for i in range(self.length):
             j = self.haloid[i]
-            print('            Identifying galaxies... Halo: {:7} / {}'.format(j, self.length), end='\r')
+            if self.verbose:
+                print('            Identifying galaxies... Halo: {:7} / {}'.format(j, self.length), end='\r')
             children_list = np.array(list(self.children[i]))
             if len(children_list) == 0:
                 self_Mstar = self.prop['M']['total_star'][i]
@@ -696,7 +702,8 @@ class halo_props:
         list_length = np.array(list(halo_id_list)).max()
         for j in halo_id_list:
             i = j - 1
-            print('Calculating temperatures and luminosities... {:7} / {}'\
+            if self.verbose:
+                print('Calculating temperatures and luminosities... {:7} / {}'\
                             .format(j, list_length), end='\r')
             center = self.center[i]
             halo = self.new_catalogue[j]
@@ -761,7 +768,8 @@ class halo_props:
         list_length = np.array(list(halo_id_list)).max()
         for j in halo_id_list:
             i = j - 1
-            print('Calculating spectroscopic temperatures... {:7} / {}'\
+            if self.verbose:
+                print('Calculating spectroscopic temperatures... {:7} / {}'\
                             .format(j, list_length), end='\r')
             center = self.center[i]
             halo = self.new_catalogue[j]
