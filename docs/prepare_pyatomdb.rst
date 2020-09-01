@@ -1,7 +1,7 @@
 Pyatomdb Relevant Module
 ========================
 
-.. automodule:: modules.prepare_pyatomdb
+.. automodule:: XIGrM.prepare_pyatomdb
     :members:
     :undoc-members:
     :inherited-members:

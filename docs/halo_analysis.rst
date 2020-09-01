@@ -1,7 +1,7 @@
 Halo Analysis Module
 ========================
 
-.. automodule:: modules.halo_analysis
+.. automodule:: XIGrM.halo_analysis
     :members:
     :undoc-members:
     :inherited-members:

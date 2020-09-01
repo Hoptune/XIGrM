@@ -1,7 +1,7 @@
 Calculating Radii Module
 ========================
 
-.. automodule:: modules.calculate_R
+.. automodule:: XIGrM.calculate_R
     :members:
     :undoc-members:
     :inherited-members:

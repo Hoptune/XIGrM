@@ -1,7 +1,7 @@
 Cosmology Module
 =========================
 
-.. automodule:: modules.cosmology
+.. automodule:: XIGrM.cosmology
     :members:
     :undoc-members:
     :inherited-members:

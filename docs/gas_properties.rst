@@ -1,7 +1,7 @@
 Gas Properties Module
 ================================
 
-.. automodule:: modules.gas_properties
+.. automodule:: XIGrM.gas_properties
     :members:
     :undoc-members:
     :inherited-members:
