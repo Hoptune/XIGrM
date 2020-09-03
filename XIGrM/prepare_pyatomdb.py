@@ -24,8 +24,8 @@ def elsymbs_to_z0s(elements): # Get atomic numbers for given element lists.
     Based on pyatomdb.atomic.elsymb_to_z0().
     '''
     aNumbers = []
-    for elements in Included_Elements:
-        aNumbers += [pyatomdb.atomic.elsymb_to_z0(elements)]
+    for element in elements:
+        aNumbers += [pyatomdb.atomic.elsymb_to_z0(element)]
     aNumbers = np.array(aNumbers)
     return np.sort(aNumbers)
 
