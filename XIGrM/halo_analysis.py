@@ -398,7 +398,7 @@ class halo_props:
         self._have_temp = True
 
     def calcu_entropy(self, cal_file, n_par=9, halo_id_list=[], \
-                calcu_field=entropy_field, thickness=0.05, volume_type='gas', \
+                calcu_field=entropy_field, thickness=0.05, volume_type='full', \
                     temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
         '''
         Calculate all entropy within a thin spherical shell 
