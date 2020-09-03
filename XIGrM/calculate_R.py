@@ -8,7 +8,8 @@ Based on Douglas Rennehan's code on HaloAnalysis.
 import numpy as np
 import pynbody as pnb
 
-def get_radius(halo, overdensities = np.array([]), rho_crit=None, precision=1e-2, rmax=None, cen=np.array([]), prop=None):
+def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
+        precision=1e-2, rmax=None, cen=np.array([]), prop=None):
     """
     Calculate different radii of a given halo with a decreasing sphere method.
 

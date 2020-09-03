@@ -140,15 +140,18 @@ class halo_props:
         self.ovdens = cosmology.Delta_vir(self.catalogue_original[1])
 
         self.dict = []
+        k = 0
         for j in range(self.length):
             i = j + 1
-            if self.verbose:
-                print('Loading properties... {:7} / {}'.format(i, self.length), end='\r')
             prop = self.catalogue_original[i].properties
             hid = prop['halo_id']
             if i != hid:
                 raise Exception('Attention! halo_id doesn\'t equal i !!!')
             self.dict.append(prop)
+
+            if ((i // 100) != (k // 100)) and self.verbose:
+                print('Loading properties... {:7} / {}'.format(i, self.length), end='\r')
+            k = i
 
         self.dict = Table(self.dict)
         self.haloid = self.dict['halo_id']
