@@ -150,7 +150,7 @@ class halo_props:
             # with the none-MPI AHF files.
             prop.pop('children', None)
             prop.pop('parentid', None)
-            
+
             hid = prop['halo_id']
             if i != hid:
                 raise Exception('Attention! halo_id doesn\'t equal i !!!')
@@ -204,7 +204,7 @@ class halo_props:
         Parameters
         ------------
         galaxy_low_limit : pynbody.array.SimArray
-            Required by get_galaxyh(). Limit above which galaxies will 
+            Required by get_galaxy(). Limit above which galaxies will 
             be identified as luminous galaxies.
         include_sub
             Whether or not to include all the subhalo particles when 
@@ -528,10 +528,12 @@ class halo_props:
         self.host_list = []
         self.tophost = np.zeros(self.length).astype(np.int)
         self.children = [set() for _ in range(self.length)]
+        k = 0
         for i in range(self.length):
             j = self.haloid[i]#j = i + 1
-            if self.verbose:
+            if ((j // 100) != (k // 100)) and self.verbose:
                 print('Generating children list... Halo: {:7} / {}'.format(j, self.length), end='\r')
+            k = j
             prop = self.dict[i]
             hostID = prop['hostHalo']
             if j in self.errorlist[0]:
