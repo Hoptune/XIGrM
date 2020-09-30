@@ -330,7 +330,9 @@ class halo_props:
             k = i
 
     def calcu_temp_lumi(self, cal_file, halo_id_list=[], \
-                    core_corr_factor=0.15, calcu_field='500', temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
+                    core_corr_factor=0.15, calcu_field='500', \
+                    temp_cut='5e5 K', nh_cut='0.13 cm**-3', \
+                    additional_filt=None):
         '''
         Calculate all the temperatures and luminosities listed in
         temp_field and luminosity_field. 
@@ -356,6 +358,9 @@ class halo_props:
         nh_cut
             nh limit above which gas particles are considered 
             as star forming.
+        additional_filt
+            Any additional filter used to constrain the hot diffuse 
+            gas we are investigating.
         '''
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -375,8 +380,13 @@ class halo_props:
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
                 subsim = halo[pnb.filt.Sphere(R)]
-                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', temp_cut) & \
-                            pnb.filt.LowPass('nh', nh_cut)]
+                if additional_filt is None:
+                    hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut)
+                else:
+                    hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut) & additional_filt
+                hot_diffuse_gas_ = subsim.gas[hot_diffuse_filt]
                 # cal_tweight can return the sum of weight_type at the same time.
                 self.prop['T']['x'][i], self.prop['L']['x'][i] = \
                         cal_tweight(hot_diffuse_gas_, weight_type='Lx')
@@ -409,7 +419,7 @@ class halo_props:
 
     def calcu_entropy(self, cal_file, n_par=9, halo_id_list=[], \
                 calcu_field=entropy_field, thickness=0.05, volume_type='full', \
-                    temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
+                temp_cut='5e5 K', nh_cut='0.13 cm**-3', additional_filt=None):
         '''
         Calculate all entropy within a thin spherical shell 
         centered at halo.
@@ -434,6 +444,15 @@ class halo_props:
             density. 'gas' means only using the sum over the volumes 
             of all hot diffuse gas particles. 'full' means to use 
             4*pi*R^2*dR.
+        temp_cut
+            Temperature limit above which gas particles are 
+            considered as hot.
+        nh_cut
+            nh limit above which gas particles are considered 
+            as star forming.
+        additional_filt
+            Any additional filter used to constrain the hot diffuse 
+            gas we are investigating.
         '''
         # thickness = pnb.array.SimArray(thickness, 'kpc')
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
@@ -455,8 +474,13 @@ class halo_props:
                 for r in calcu_field:
                     R = self.prop['R'][i:i+1][r].in_units('kpc')
                     subgas = halo.gas[pnb.filt.Annulus(R, (thickness + 1) * R)]
-                    hot_diffuse_gas_ = subgas[pnb.filt.HighPass('temp', temp_cut) \
-                            & pnb.filt.LowPass('nh', nh_cut)]
+                    if additional_filt is None:
+                        hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                                pnb.filt.LowPass('nh', nh_cut)
+                    else:
+                        hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                                pnb.filt.LowPass('nh', nh_cut) & additional_filt
+                    hot_diffuse_gas_ = subgas[hot_diffuse_filt]
                     if len(hot_diffuse_gas_) < n_par:
                         self.prop['S'][r][i] = np.nan
                         self.prop['T']['spec' + r][i] = np.nan
@@ -677,7 +701,7 @@ class halo_props:
     
     def calcu_tx_lx(self, halo_id_list=[], \
                     core_corr_factor=0.15, calcu_field='500', \
-                    temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
+                    temp_cut='5e5 K', nh_cut='0.13 cm**-3', additional_filt=None):
         '''
         Calculate X-ray luminosities and emission weighted 
         temperatures listed in temp_field and luminosity_field. 
@@ -700,6 +724,9 @@ class halo_props:
         nh_cut
             nh limit above which gas particles are considered 
             as star forming.
+        additional_filt
+            Any additional filter used to constrain the hot diffuse 
+            gas we are investigating.
         '''
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -723,8 +750,13 @@ class halo_props:
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
                 subsim = halo[pnb.filt.Sphere(R)]
-                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', temp_cut) & \
-                            pnb.filt.LowPass('nh', nh_cut)]
+                if additional_filt is None:
+                    hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut)
+                else:
+                    hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut) & additional_filt
+                hot_diffuse_gas_ = subsim.gas[hot_diffuse_filt]
                 # cal_tweight can return the sum of weight_type at the same time.
                 self.prop['T']['x'][i], self.prop['L']['x'][i] = \
                         cal_tweight(hot_diffuse_gas_, weight_type='Lx')
@@ -740,7 +772,8 @@ class halo_props:
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
     
     def calcu_tspec(self, cal_file, halo_id_list=[], \
-                    core_corr_factor=0.15, calcu_field='500', temp_cut='5e5 K', nh_cut='0.13 cm**-3'):
+                    core_corr_factor=0.15, calcu_field='500', temp_cut='5e5 K', \
+                    nh_cut='0.13 cm**-3', additional_filt=None):
         '''
         Calculate spectroscopic temperatures based on Douglas's 
         pytspec module.
@@ -766,6 +799,9 @@ class halo_props:
         nh_cut
             nh limit above which gas particles are considered 
             as star forming.
+        additional_filt
+            Any additional filter used to constrain the hot diffuse 
+            gas we are investigating.
         '''
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -789,9 +825,13 @@ class halo_props:
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
                 subsim = halo[pnb.filt.Sphere(R)]
-                hot_diffuse_gas_ = subsim.gas[pnb.filt.HighPass('temp', temp_cut) & \
-                            pnb.filt.LowPass('nh', nh_cut)]
-
+                if additional_filt is None:
+                    hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut)
+                else:
+                    hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                            pnb.filt.LowPass('nh', nh_cut) & additional_filt
+                hot_diffuse_gas_ = subsim.gas[hot_diffuse_filt]
                 self.prop['T']['spec'][i] = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
                 # Core-corrected temperatures:
