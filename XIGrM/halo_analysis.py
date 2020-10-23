@@ -597,10 +597,12 @@ class halo_props:
             raise Exception('Must get_children first!')
         if include_:
             self.new_catalogue = {}
+            k = 0
             for i in range(self.length):
                 j = self.haloid[i]
-                if self.verbose:
+                if ((i // 100) != (k // 100)) and self.verbose:
                     print('Generating new catalogue... Halo: {:7} / {}'.format(j, self.length), end='\r')
+                    k = i
                 if len(self.children[i]) == 0:
                     self.new_catalogue[j] = self.catalogue_original[j]
                 else:
@@ -634,11 +636,12 @@ class halo_props:
         self.n_lgal = np.zeros(self.length) # Number of total luminous galaxies embedded in each host halo.
         # The galaxies within subhalos (i.e., subhalos themselves) will also be taken into account.
         
-
+        k = 0
         for i in range(self.length):
             j = self.haloid[i]
-            if self.verbose:
+            if ((i // 100) != (k // 100)) and self.verbose:
                 print('Calculating total stellar masses... Halo: {:7} / {}'.format(j, self.length), end='\r')
+                k = i
             self.prop['M']['total_star'][i] = self.new_catalogue[j].star['mass'].sum()
             sf_gas = self.new_catalogue[j].gas[pnb.filt.LowPass('temp', '3e4 K')]
             # sf_gas = self.new_catalogue[j].gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
@@ -646,10 +649,12 @@ class halo_props:
             # sf_gas, i.e., star forming gas, is used in the definition of resolved galaxies in Liang's Figure2.
             # But seems that Liang didn't plot Figure 2 using the concept of resolved galaxies.
         low_limit = g_low_limit.in_units(self.prop['M']['total_star'].units)
+        k = 0
         for i in range(self.length):
             j = self.haloid[i]
-            if self.verbose:
+            if ((i // 100) != (k // 100)) and self.verbose:
                 print('            Identifying galaxies... Halo: {:7} / {}'.format(j, self.length), end='\r')
+                k = i
             children_list = np.array(list(self.children[i]))
             if len(children_list) == 0:
                 self_Mstar = self.prop['M']['total_star'][i]
