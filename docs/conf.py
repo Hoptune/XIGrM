@@ -31,7 +31,8 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-MOCK_MODULES = ['pytspec', 'pynbody', 'astropy', 'pyatomdb', 'h5py']
+MOCK_MODULES = ['pytspec', 'pynbody', 'astropy', 'pyatomdb', 'h5py', 'astropy.constants', \
+                'astropy.table', 'astropy.units', 'astropy.io.fits', 'pyatomdb.atomic', 'pyatomdb.atomdb']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ---------------------------------------------------
