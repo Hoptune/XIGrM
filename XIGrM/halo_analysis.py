@@ -307,6 +307,14 @@ class halo_props:
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
+                boxsize = halo.properties['boxsize']
+                original_pos = halo['pos'].copy()
+                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
+                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
+                    halo['pos'][index1, i] += boxsize
+                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
+                    halo['pos'][index2, i] -= boxsize
+
                 for r in calcu_field:
                     # Apply filters
                     subsim = halo[pnb.filt.Sphere(self.prop['R'][i:i+1][r].in_units('kpc'))]
@@ -325,6 +333,8 @@ class halo_props:
                     self.prop['M']['cold' + r][i] = cold_diffuse_gas['mass'].sum() \
                                 + self.prop['M']['ism' + r][i]
                     self.prop['M']['igrm' + r][i] = hot_diffuse_gas_['mass'].sum()
+                
+                halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('Calculating specific masses... {:7} / {}'.format(j, list_length), end='\r')
             k = i
@@ -379,6 +389,14 @@ class halo_props:
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
+                boxsize = halo.properties['boxsize']
+                original_pos = halo['pos'].copy()
+                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
+                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
+                    halo['pos'][index1, i] += boxsize
+                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
+                    halo['pos'][index2, i] -= boxsize
+
                 subsim = halo[pnb.filt.Sphere(R)]
                 if additional_filt is None:
                     hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
@@ -410,6 +428,8 @@ class halo_props:
                 self.prop['T']['x_corr_cont'][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
                 self.prop['T']['mass_corr'][i], _ = cal_tweight(corr_hot_, weight_type='mass')
+            
+                halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('Calculating temperatures and luminosities... {:7} / {}'\
                             .format(j, list_length), end='\r')
@@ -471,6 +491,14 @@ class halo_props:
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
+                boxsize = halo.properties['boxsize']
+                original_pos = halo['pos'].copy()
+                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
+                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
+                    halo['pos'][index1, i] += boxsize
+                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
+                    halo['pos'][index2, i] -= boxsize
+
                 for r in calcu_field:
                     R = self.prop['R'][i:i+1][r].in_units('kpc')
                     subgas = halo.gas[pnb.filt.Annulus(R, (thickness + 1) * R)]
@@ -503,6 +531,8 @@ class halo_props:
                         self.prop['ne'][r][i] = avg_ne
                         self.prop['nh'][r][i] = avg_nh
                         self.prop['S'][r][i] = tempTspec/(avg_ne)**(2, 3)
+                
+                halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('            Calculating entropies... {:7} / {}'\
                             .format(j, list_length), end='\r')
@@ -754,6 +784,14 @@ class halo_props:
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
+                boxsize = halo.properties['boxsize']
+                original_pos = halo['pos'].copy()
+                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
+                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
+                    halo['pos'][index1, i] += boxsize
+                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
+                    halo['pos'][index2, i] -= boxsize
+
                 subsim = halo[pnb.filt.Sphere(R)]
                 if additional_filt is None:
                     hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
@@ -775,7 +813,9 @@ class halo_props:
                 self.prop['T']['x_corr'][i], _ = cal_tweight(corr_hot_, weight_type='Lx')
                 self.prop['T']['x_corr_cont'][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
-    
+
+                halo['pos'] = original_pos
+
     def calcu_tspec(self, cal_file, halo_id_list=[], \
                     core_corr_factor=0.15, calcu_field='500', temp_cut='5e5 K', \
                     nh_cut='0.13 cm**-3', additional_filt=None):
@@ -829,6 +869,14 @@ class halo_props:
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
+                boxsize = halo.properties['boxsize']
+                original_pos = halo['pos'].copy()
+                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
+                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
+                    halo['pos'][index1, i] += boxsize
+                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
+                    halo['pos'][index2, i] -= boxsize
+
                 subsim = halo[pnb.filt.Sphere(R)]
                 if additional_filt is None:
                     hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
@@ -844,6 +892,8 @@ class halo_props:
                 corr_hot_ = hot_diffuse_gas_[~pnb.filt.Sphere(core_corr_factor*R)]
                 self.prop['T']['spec_corr'][i] = pnb.array.SimArray(cal_tspec(corr_hot_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
+
+                halo['pos'] = original_pos
     def get_center(self):
         '''
         Calculate the center of the halos if an ahfcatalogue is 
