@@ -307,13 +307,9 @@ class halo_props:
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize']
+                boxsize = halo.properties['boxsize'].in_units('kpc')
                 original_pos = halo['pos'].copy()
-                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
-                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
-                    halo['pos'][index1, i] += boxsize
-                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
-                    halo['pos'][index2, i] -= boxsize
+                halo['pos'] = correct_pos(halo['pos'], boxsize)
 
                 for r in calcu_field:
                     # Apply filters
@@ -389,13 +385,9 @@ class halo_props:
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize']
+                boxsize = halo.properties['boxsize'].in_units('kpc')
                 original_pos = halo['pos'].copy()
-                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
-                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
-                    halo['pos'][index1, i] += boxsize
-                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
-                    halo['pos'][index2, i] -= boxsize
+                halo['pos'] = correct_pos(halo['pos'], boxsize)
 
                 subsim = halo[pnb.filt.Sphere(R)]
                 if additional_filt is None:
@@ -491,13 +483,9 @@ class halo_props:
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize']
+                boxsize = halo.properties['boxsize'].in_units('kpc')
                 original_pos = halo['pos'].copy()
-                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
-                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
-                    halo['pos'][index1, i] += boxsize
-                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
-                    halo['pos'][index2, i] -= boxsize
+                halo['pos'] = correct_pos(halo['pos'], boxsize)
 
                 for r in calcu_field:
                     R = self.prop['R'][i:i+1][r].in_units('kpc')
@@ -784,13 +772,9 @@ class halo_props:
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize']
+                boxsize = halo.properties['boxsize'].in_units('kpc')
                 original_pos = halo['pos'].copy()
-                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
-                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
-                    halo['pos'][index1, i] += boxsize
-                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
-                    halo['pos'][index2, i] -= boxsize
+                halo['pos'] = correct_pos(halo['pos'], boxsize)
 
                 subsim = halo[pnb.filt.Sphere(R)]
                 if additional_filt is None:
@@ -869,13 +853,9 @@ class halo_props:
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize']
+                boxsize = halo.properties['boxsize'].in_units('kpc')
                 original_pos = halo['pos'].copy()
-                for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
-                    index1, = np.where(halo['pos'][:, i] < -boxsize/2)
-                    halo['pos'][index1, i] += boxsize
-                    index2, = np.where(halo['pos'][:, i] > boxsize/2)
-                    halo['pos'][index2, i] -= boxsize
+                halo['pos'] = correct_pos(halo['pos'], boxsize)
 
                 subsim = halo[pnb.filt.Sphere(R)]
                 if additional_filt is None:
@@ -926,7 +906,8 @@ class halo_props:
             for i in range(self.length):
                 j = self.haloid[i]
                 print('Calculating center... {:7} / {}'.format(j, self.length), end='\r')
-                self.center[i] = pnb.analysis.halo.center(self.new_catalogue[j], mode=center_mode, retcen=True, vel=False)
+                self.center[i] = pnb.analysis.halo.center(self.new_catalogue[j], \
+                    mode=center_mode, retcen=True, vel=False)
         self._have_center = True
     
 def get_union(catalogue, list):
@@ -943,3 +924,14 @@ def get_union(catalogue, list):
     for i in list[1:]:
         temp_halo = temp_halo.union(catalogue[i])
     return temp_halo
+
+def correct_pos(pos, boxsize):
+    '''
+    Correct the position of patricles crossing the box periodical boundary.
+    '''
+    for dim in range(3):
+        index1, = np.where(pos[:, dim] < -boxsize/2)
+        pos[index1, dim] += boxsize
+        index2, = np.where(pos[:, dim] > boxsize/2)
+        pos[index2, dim] -= boxsize
+    return pos
