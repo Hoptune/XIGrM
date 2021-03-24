@@ -38,7 +38,7 @@ nh_field = ['500', '2500']
 # _cont for only considering continuum emission, _corr for core-corrected (0.15*R500-R500)
 # xb for broad band X-ray (0.1-2.4 keV) in our case.
 
-default_field = {'R': radius_field, 'M': mass_field, 'T': temp_field, \
+default_field = {'R': radius_field, 'M': mass_field, 'T': temp_field,\
             'S': entropy_field, 'L': luminosity_field, 'ne': ne_field, 'nh': nh_field}
 default_units = {'T': 'keV', 'L': 'erg s**-1', 'R': 'kpc', 'M': 'Msol', \
             'S': 'keV cm**2', 'ne': 'cm**-3', 'nh': 'cm**-3'}
@@ -497,6 +497,70 @@ class halo_props:
                         hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
                                 pnb.filt.LowPass('nh', nh_cut) & additional_filt
                     hot_diffuse_gas_ = subgas[hot_diffuse_filt]
+                    if len(hot_diffuse_gas_) < n_par:
+                        self.prop['S'][r][i] = np.nan
+                        self.prop['T']['spec' + r][i] = np.nan
+                    else:
+                        tempTspec = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
+                                cal_f=cal_file, datatype=self.datatype), units='keV')
+                        if volume_type == 'gas':
+                            temp_volume = hot_diffuse_gas_['volume'].sum()
+                        elif volume_type == 'full':
+                            temp_volume = 4/3*np.pi*(((thickness + 1) * R)**3 - R**3)
+                        elif volume_type == 'full_approx':
+                            temp_volume = 4*np.pi*R**2*thickness*R
+                        else:
+                            raise Exception("volume_type is not accepted!")
+                        avg_ne = ((hot_diffuse_gas_['ne'] * hot_diffuse_gas_['volume']).sum() \
+                                / temp_volume).in_units('cm**-3')
+                        avg_nh = ((hot_diffuse_gas_['nh'] * hot_diffuse_gas_['volume']).sum() \
+                                / temp_volume).in_units('cm**-3')
+                        self.prop['T']['spec' + r][i] = tempTspec
+                        self.prop['ne'][r][i] = avg_ne
+                        self.prop['nh'][r][i] = avg_nh
+                        self.prop['S'][r][i] = tempTspec/(avg_ne)**(2, 3)
+                
+                halo['pos'] = original_pos
+            if ((i // 100) != (k // 100)) and self.verbose:
+                print('            Calculating entropies... {:7} / {}'\
+                            .format(j, list_length), end='\r')
+            k = i
+
+    def calcu_metallicity(self, halo_id_list=[], elements=['H', 'O', 'Si', 'Fe'], \
+                radii=['500'], temp_cut='5e5 K', nh_cut='0.13 cm**-3', additional_filt=None):
+
+        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        if len(halo_id_list) == 0:
+            if not self._have_group:
+                raise Exception('Must get_group_list (or init_relationship) first!')
+            halo_id_list = self.group_list
+        if not self._have_radii:
+            raise Exception('Must get_radii_masses first!')
+
+        list_length = np.array(list(halo_id_list)).max()
+        k = 0
+        for j in halo_id_list:
+            i = j - 1
+            center = self.center[i]
+            halo = self.new_catalogue[j]
+            tx = pnb.transformation.inverse_translate(halo, center)
+            with tx:
+                boxsize = halo.properties['boxsize'].in_units('kpc')
+                original_pos = halo['pos'].copy()
+                halo['pos'] = correct_pos(halo['pos'], boxsize)
+
+                for r in calcu_field:
+                    R = self.prop['R'][i:i+1][r].in_units('kpc')
+                    subgas = halo.gas[pnb.filt.Sphere(R)]
+                    if additional_filt is None:
+                        hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                                pnb.filt.LowPass('nh', nh_cut)
+                    else:
+                        hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
+                                pnb.filt.LowPass('nh', nh_cut) & additional_filt
+                    hot_diffuse_gas_ = subgas[hot_diffuse_filt]
+
+
                     if len(hot_diffuse_gas_) < n_par:
                         self.prop['S'][r][i] = np.nan
                         self.prop['T']['spec' + r][i] = np.nan
