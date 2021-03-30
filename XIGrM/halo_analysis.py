@@ -588,7 +588,7 @@ class halo_props:
                             totNx = (gas_nx * igrm['volume']).sum()
                         else:
                             totNx = (igrm['nh'] * igrm['volume']).sum()
-                        self.prop['metals']['n_' + ele + r] = totNx/temp_volume
+                        self.prop['metals']['n_' + ele + r] = (totNx/temp_volume).in_units('cm**-3')
                 halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('            Calculating entropies... {:7} / {}'\
