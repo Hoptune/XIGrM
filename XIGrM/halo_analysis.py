@@ -42,7 +42,7 @@ nh_field = ['500', '2500']
 default_field = {'R': radius_field, 'M': mass_field, 'T': temp_field,\
             'S': entropy_field, 'L': luminosity_field, 'ne': ne_field, 'nh': nh_field}
 default_units = {'T': 'keV', 'L': 'erg s**-1', 'R': 'kpc', 'M': 'Msol', \
-            'S': 'keV cm**2', 'ne': 'cm**-3', 'nh': 'cm**-3'}
+            'S': 'keV cm**2', 'ne': 'cm**-3', 'nh': 'cm**-3', 'metals': 'cm**-3'}
 
 class halo_props:
     '''
@@ -189,7 +189,9 @@ class halo_props:
             self.prop[field_type] = Table(init_prop_table, names=field[field_type])
             # astropy.table.Table is only used for generating a structured array more conveniently
             self.prop[field_type] = pnb.array.SimArray(self.prop[field_type], units=default_units[field_type])
-        
+        self.field = default_field
+        self.field_units = default_units
+
         self._have_children = False
         self._have_galaxy = False
         self._have_group = False
@@ -544,6 +546,7 @@ class halo_props:
                 field_names.append('n_' + ele + rad)
         self.prop['metals'] = Table(init_prop_table, names=field_names)
         self.prop['metals'] = pnb.array.SimArray(self.prop['metals'], units='cm**-3')
+        self.field['metals'] = field_names
 
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -588,14 +591,14 @@ class halo_props:
                             totNx = (gas_nx * igrm['volume']).sum()
                         else:
                             totNx = (igrm['nh'] * igrm['volume']).sum()
-                        self.prop['metals']['n_' + ele + r] = (totNx/temp_volume).in_units('cm**-3')
+                        self.prop['metals']['n_' + ele + r][i] = (totNx/temp_volume).in_units('cm**-3')
                 halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('            Calculating entropies... {:7} / {}'\
                             .format(j, list_length), end='\r')
             k = i
 
-    def savedata(self, filename, field = default_field, halo_id_list=[], units=default_units):
+    def savedata(self, filename, field = None, halo_id_list=[], units=default_units):
         '''
         Save the data in hdf5 format. Will save halo_id_list 
         (key: 'halo_id') and the quantities listed in field.
@@ -612,6 +615,8 @@ class halo_props:
         units
             Convert the data into specified inits and save.
         '''
+        if field is None:
+            field = self.field
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
             halo_id_list = self.group_list

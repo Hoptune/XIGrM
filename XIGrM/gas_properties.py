@@ -28,7 +28,7 @@ def n_X(density, mass_fraction, element):
     '''
     Convert mass fractions of other elements to number densities.
     '''
-    atomicNumber = ppat.elsymbs_to_z0s(element)
+    atomicNumber = ppat.elsymbs_to_z0s([element])
     aMass = ppat.get_atomic_masses(atomicNumber)
     result = density.in_units('g cm**-3').view(np.ndarray) * mass_fraction/(aMass*m_p)
     result = pnb.array.SimArray(result)
