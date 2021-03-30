@@ -531,7 +531,7 @@ class halo_props:
 
     def calcu_metallicity(self, halo_id_list=[], elements=['H', 'O', 'Si', 'Fe'], \
                 radii=['500'], temp_cut='5e5 K', nh_cut='0.13 cm**-3', \
-                additional_filt=None, volume_type='full'):
+                additional_filt=None, weight_type='mass'):
 
         if self.datatype[:5] == 'gizmo':
             self.metal_idx = {'He': 1, 'C': 2, 'N': 3, 'O': 4, \
@@ -579,23 +579,18 @@ class halo_props:
                         hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
                                 pnb.filt.LowPass('nh', nh_cut) & additional_filt
                     igrm = subgas[hot_diffuse_filt]
-                    if volume_type == 'full':
-                        temp_volume = 4*np.pi/3 * R**3
-                    elif volume_type == 'gas':
-                        temp_volume = igrm['volume'].sum()
-                    else:
-                        raise Exception("Volume type not accepted.")
+                    weight_sum = igrm[weight_type].sum()
 
                     for ele in elements:
                         if ele != 'H':
                             gas_nx = g_p.n_X(igrm['rho'], igrm['metals'][:, self.metal_idx[ele]], ele)
-                            totNx = (gas_nx * igrm['volume']).sum()
+                            totNx = (gas_nx * igrm[weight_type]).sum()
                         else:
-                            totNx = (igrm['nh'] * igrm['volume']).sum()
-                        self.prop['metals']['n_' + ele + r][i] = (totNx/temp_volume).in_units('cm**-3')
+                            totNx = (igrm['nh'] * igrm[weight_type]).sum()
+                        self.prop['metals']['n_' + ele + r][i] = (totNx/weight_sum).in_units('cm**-3')
                 halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
-                print('            Calculating entropies... {:7} / {}'\
+                print('            Calculating metallicities... {:7} / {}'\
                             .format(j, list_length), end='\r')
             k = i
 
