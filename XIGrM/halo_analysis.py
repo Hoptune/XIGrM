@@ -42,7 +42,7 @@ nh_field = ['500', '2500']
 default_field = {'R': radius_field, 'M': mass_field, 'T': temp_field,\
             'S': entropy_field, 'L': luminosity_field, 'ne': ne_field, 'nh': nh_field}
 default_units = {'T': 'keV', 'L': 'erg s**-1', 'R': 'kpc', 'M': 'Msol', \
-            'S': 'keV cm**2', 'ne': 'cm**-3', 'nh': 'cm**-3', 'metals': 'cm**-3'}
+            'S': 'keV cm**2', 'ne': 'cm**-3', 'nh': 'cm**-3'}
 
 class halo_props:
     '''
@@ -547,6 +547,7 @@ class halo_props:
         self.prop['metals'] = Table(init_prop_table, names=field_names)
         self.prop['metals'] = pnb.array.SimArray(self.prop['metals'], units='cm**-3')
         self.field['metals'] = field_names
+        self.field_units['metals'] = 'cm**-3'
 
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -598,7 +599,7 @@ class halo_props:
                             .format(j, list_length), end='\r')
             k = i
 
-    def savedata(self, filename, field = None, halo_id_list=[], units=default_units):
+    def savedata(self, filename, field = None, halo_id_list=[], units=None):
         '''
         Save the data in hdf5 format. Will save halo_id_list 
         (key: 'halo_id') and the quantities listed in field.
@@ -617,6 +618,8 @@ class halo_props:
         '''
         if field is None:
             field = self.field
+        if units is None:
+            field_units = self.field_units
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
             halo_id_list = self.group_list
@@ -630,7 +633,7 @@ class halo_props:
                 infos = field[attr]
                 for info in infos:
                     data_to_save = self.prop[attr][info][halo_id_list - 1]
-                    data_to_save.convert_units(default_units[attr])
+                    data_to_save.convert_units(field_units[attr])
                     dset = grp.create_dataset(info, data = data_to_save)
                     dset.attrs['units'] = str(data_to_save.units)
 
