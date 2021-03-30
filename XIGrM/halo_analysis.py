@@ -15,6 +15,7 @@ import h5py
 from . import prepare_pyatomdb as ppat
 from . import calculate_R as cR
 from . import cosmology
+from . import gas_properties as g_p
 from .X_properties import cal_tspec, cal_tweight
 import pyatomdb
 
@@ -527,7 +528,22 @@ class halo_props:
             k = i
 
     def calcu_metallicity(self, halo_id_list=[], elements=['H', 'O', 'Si', 'Fe'], \
-                radii=['500'], temp_cut='5e5 K', nh_cut='0.13 cm**-3', additional_filt=None):
+                radii=['500'], temp_cut='5e5 K', nh_cut='0.13 cm**-3', \
+                additional_filt=None, volume_type='full'):
+
+        if self.datatype[:5] == 'gizmo':
+            self.metal_idx = {'He': 1, 'C': 2, 'N': 3, 'O': 4, \
+                'Ne': 5, 'Mg': 6, 'Si': 7, 'S': 8, 'Ca': 9, 'Fe': 10}
+        else:
+            raise Exception('Currently only support GIZMO.')
+        init_zeros = np.zeros(self.length)
+        init_prop_table = Table([init_zeros for _ in range(len(elements)*len(radii))])
+        field_names = []
+        for ele in elements:
+            for rad in radii:
+                field_names.append('n_' + ele + rad)
+        self.prop['metals'] = Table(init_prop_table, names=field_names)
+        self.prop['metals'] = pnb.array.SimArray(self.prop['metals'], units='cm**-3')
 
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -549,7 +565,7 @@ class halo_props:
                 original_pos = halo['pos'].copy()
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
-                for r in calcu_field:
+                for r in radii:
                     R = self.prop['R'][i:i+1][r].in_units('kpc')
                     subgas = halo.gas[pnb.filt.Sphere(R)]
                     if additional_filt is None:
@@ -558,32 +574,21 @@ class halo_props:
                     else:
                         hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
                                 pnb.filt.LowPass('nh', nh_cut) & additional_filt
-                    hot_diffuse_gas_ = subgas[hot_diffuse_filt]
-
-
-                    if len(hot_diffuse_gas_) < n_par:
-                        self.prop['S'][r][i] = np.nan
-                        self.prop['T']['spec' + r][i] = np.nan
+                    igrm = subgas[hot_diffuse_filt]
+                    if volume_type == 'full':
+                        temp_volume = 4*np.pi/3 * R**3
+                    elif volume_type == 'gas':
+                        temp_volume = igrm['volume'].sum()
                     else:
-                        tempTspec = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
-                                cal_f=cal_file, datatype=self.datatype), units='keV')
-                        if volume_type == 'gas':
-                            temp_volume = hot_diffuse_gas_['volume'].sum()
-                        elif volume_type == 'full':
-                            temp_volume = 4/3*np.pi*(((thickness + 1) * R)**3 - R**3)
-                        elif volume_type == 'full_approx':
-                            temp_volume = 4*np.pi*R**2*thickness*R
+                        raise Exception("Volume type not accepted.")
+
+                    for ele in elements:
+                        if ele != 'H':
+                            gas_nx = g_p.n_X(igrm['rho'], igrm['metals'][:, self.metal_idx[ele]], ele)
+                            totNx = (gas_nx * igrm['volume']).sum()
                         else:
-                            raise Exception("volume_type is not accepted!")
-                        avg_ne = ((hot_diffuse_gas_['ne'] * hot_diffuse_gas_['volume']).sum() \
-                                / temp_volume).in_units('cm**-3')
-                        avg_nh = ((hot_diffuse_gas_['nh'] * hot_diffuse_gas_['volume']).sum() \
-                                / temp_volume).in_units('cm**-3')
-                        self.prop['T']['spec' + r][i] = tempTspec
-                        self.prop['ne'][r][i] = avg_ne
-                        self.prop['nh'][r][i] = avg_nh
-                        self.prop['S'][r][i] = tempTspec/(avg_ne)**(2, 3)
-                
+                            totNx = (igrm['nh'] * igrm['volume']).sum()
+                        self.prop['metals']['n_' + ele + r] = totNx/temp_volume
                 halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('            Calculating entropies... {:7} / {}'\
