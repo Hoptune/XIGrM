@@ -531,7 +531,7 @@ class halo_props:
 
     def calcu_metallicity(self, halo_id_list=[], elements=['H', 'O', 'Si', 'Fe'], \
                 radii=['500'], temp_cut='5e5 K', nh_cut='0.13 cm**-3', \
-                additional_filt=None, weight_type='mass'):
+                additional_filt=None, weight_types=['mass', 'Lx']):
 
         if self.datatype[:5] == 'gizmo':
             self.metal_idx = {'He': 1, 'C': 2, 'N': 3, 'O': 4, \
@@ -543,7 +543,8 @@ class halo_props:
         field_names = []
         for ele in elements:
             for rad in radii:
-                field_names.append('n_' + ele + rad)
+                for weight_type in weight_types:
+                    field_names.append('Z_' + ele + rad + weight_type)
         self.prop['metals'] = Table(init_prop_table, names=field_names)
         self.prop['metals'] = pnb.array.SimArray(self.prop['metals'], units='cm**-3')
         self.field['metals'] = field_names
@@ -579,15 +580,18 @@ class halo_props:
                         hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
                                 pnb.filt.LowPass('nh', nh_cut) & additional_filt
                     igrm = subgas[hot_diffuse_filt]
-                    weight_sum = igrm[weight_type].sum()
+                    for weight_type in weight_types:
+                        weight_sum = igrm[weight_type].sum()
 
-                    for ele in elements:
-                        if ele != 'H':
-                            gas_nx = g_p.n_X(igrm['rho'], igrm['metals'][:, self.metal_idx[ele]], ele)
-                            totNx = (gas_nx * igrm[weight_type]).sum()
-                        else:
-                            totNx = (igrm['nh'] * igrm[weight_type]).sum()
-                        self.prop['metals']['n_' + ele + r][i] = (totNx/weight_sum).in_units('cm**-3')
+                        for ele in elements:
+                            if ele != 'H':
+                                # gas_nx = g_p.n_X(igrm['rho'], igrm['metals'][:, self.metal_idx[ele]], ele)
+                                totZx = (igrm['metals'][:, self.metal_idx[ele]] * igrm[weight_type]).sum()
+                            else:
+                                # totNx = (igrm['nh'] * igrm[weight_type]).sum()
+                                totZx = (igrm['X_H'] * igrm[weight_type]).sum()
+                            self.prop['metals']['Z_' + ele + r + weight_type][i] = \
+                                            (totNx/weight_sum).in_units('1')
                 halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('            Calculating metallicities... {:7} / {}'\
