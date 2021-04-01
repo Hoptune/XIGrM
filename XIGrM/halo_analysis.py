@@ -591,7 +591,7 @@ class halo_props:
                                 # totNx = (igrm['nh'] * igrm[weight_type]).sum()
                                 totZx = (igrm['X_H'] * igrm[weight_type]).sum()
                             self.prop['metals']['Z_' + ele + r + weight_type][i] = \
-                                            (totZx/weight_sum).in_units('1')
+                                            (totZx/weight_sum)
                 halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('            Calculating metallicities... {:7} / {}'\
