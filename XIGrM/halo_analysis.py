@@ -539,12 +539,12 @@ class halo_props:
         else:
             raise Exception('Currently only support GIZMO.')
         init_zeros = np.zeros(self.length)
-        init_prop_table = Table([init_zeros for _ in range(len(elements)*len(radii))])
         field_names = []
         for ele in elements:
             for rad in radii:
                 for weight_type in weight_types:
                     field_names.append('Z_' + ele + rad + weight_type)
+        init_prop_table = Table([init_zeros for _ in range(len(field_names))])
         self.prop['metals'] = Table(init_prop_table, names=field_names)
         self.prop['metals'] = pnb.array.SimArray(self.prop['metals'], units='cm**-3')
         self.field['metals'] = field_names
