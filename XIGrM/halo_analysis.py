@@ -189,7 +189,10 @@ class halo_props:
             self.prop[field_type] = Table(init_prop_table, names=field[field_type])
             # astropy.table.Table is only used for generating a structured array more conveniently
             self.prop[field_type] = pnb.array.SimArray(self.prop[field_type], units=default_units[field_type])
-        self.field = default_field
+        if field is None:
+            self.field = default_field
+        else:
+            self.field = field
         self.field_units = default_units
 
         self._have_children = False
