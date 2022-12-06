@@ -11,6 +11,7 @@ import astropy.units as astrou
 import numpy as np
 import time
 import h5py
+from multiprocessing import Pool
 
 from . import prepare_pyatomdb as ppat
 from . import calculate_R as cR
@@ -111,13 +112,14 @@ class halo_props:
     group_list
         halo_id of the halo identified as group in the catalogue.
     '''
-    def __init__(self, halocatalogue, datatype, field=default_field, host_id_of_top_level=0, verbose=True):
+    def __init__(self, halocatalogue, datatype, field=default_field,
+                    host_id_of_top_level=0, verbose=True, nthreads=1):
         '''
         Initialization routine.
 
         Input
         -----
-        ahfcatalogue : pynbody.halo.HaloCatalogue
+        halocatalogue : pynbody.halo.HaloCatalogue
             Only has been tested for pynbody.halo.AHFCatalogue
         field
             Quantities to calculate. When changing specific_mass_field, 
@@ -128,6 +130,8 @@ class halo_props:
         host_id_of_top_level
             How catalogue record "hostHalo" for those halos 
             without a host halo. Default is 0.
+        nthreads : int
+            Default number of cpus to be used during massive calculations.
         '''
         self.datatype=datatype
         self.catalogue_original = halocatalogue
@@ -139,7 +143,7 @@ class halo_props:
 
         self.rho_crit = pnb.analysis.cosmology.rho_crit(f=self.catalogue_original[1], unit='Msol kpc**-3')
         self.ovdens = cosmology.Delta_vir(self.catalogue_original[1])
-
+        self.nthreads = nthreads
         self.dict = []
         k = 0
         for j in range(self.length):
@@ -226,7 +230,7 @@ class halo_props:
         self.get_group_list(N_galaxy)
         self.get_center()
     
-    def calcu_radii_masses(self, halo_id_list=[], rdict=None, precision=1e-2, rmax=None):
+    def calcu_radii_masses(self, halo_id_list=[], rdict=None, precision=1e-2, rmax=None, nthreads=None):
         '''
         Calculate radii (Rvir, R200, etc) and corresponding masses.
 
@@ -243,7 +247,9 @@ class halo_props:
             calculate_R.py documentation for detail.
         rmax
             Maximum value for the shrinking sphere method. See 
-            get_index() in calculate_R.py documentation for detail.
+            get_radius() in calculate_R.py documentation for detail.
+        nthreads : int
+            Number of cpus to use when doing the calculation.
         '''
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
@@ -255,6 +261,14 @@ class halo_props:
         
         if rdict == None:
             rdict = {'vir': self.ovdens, '200': 200, '500': 500, '2500': 2500}
+
+        if nthreads is None:
+            nthreads = self.nthreads
+        
+        def func_to_pool(j):
+            i = j - 1
+            
+        
         t1 = 0; t2 = 0
         list_length = np.array(list(halo_id_list)).max()
         k = 0
