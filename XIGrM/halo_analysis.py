@@ -111,7 +111,8 @@ class halo_props:
     group_list
         halo_id of the halo identified as group in the catalogue.
     '''
-    def __init__(self, halocatalogue, datatype, field=default_field, host_id_of_top_level=0, verbose=True):
+    def __init__(self, halocatalogue, datatype, field=default_field,
+            field_units=default_units, host_id_of_top_level=0, verbose=True):
         '''
         Initialization routine.
 
@@ -184,16 +185,16 @@ class halo_props:
 
         # prop initialization
         self.prop = {}
-        for field_type in default_units:
+        for field_type in field_units:
             init_prop_table = [init_zeros for _ in range(len(field[field_type]))]
             self.prop[field_type] = Table(init_prop_table, names=field[field_type])
             # astropy.table.Table is only used for generating a structured array more conveniently
-            self.prop[field_type] = pnb.array.SimArray(self.prop[field_type], units=default_units[field_type])
+            self.prop[field_type] = pnb.array.SimArray(self.prop[field_type], units=field_units[field_type])
         if field is None:
             self.field = default_field
         else:
             self.field = field
-        self.field_units = default_units
+        self.field_units = field_units
 
         self._have_children = False
         self._have_galaxy = False
@@ -319,7 +320,12 @@ class halo_props:
 
                 for r in calcu_field:
                     # Apply filters
-                    subsim = halo[pnb.filt.Sphere(self.prop['R'][i:i+1][r].in_units('kpc'))]
+                    if "x" in r:
+                        _frac, _tr = r.split("x")
+                        _tmpr = float(_frac)*self.prop['R'][i:i+1][_tr].in_units('kpc')
+                    else:
+                        _tmpr = self.prop['R'][i:i+1][r].in_units('kpc')
+                    subsim = halo[pnb.filt.Sphere(_tmpr)]
                     cold_diffuse_gas = subsim.gas[pnb.filt.LowPass('temp', temp_cut) & \
                             pnb.filt.LowPass('nh', nh_cut)]
                     ISM = subsim.gas[pnb.filt.HighPass('nh', nh_cut)]
@@ -388,7 +394,12 @@ class halo_props:
             i = j - 1
             center = self.center[i]
             halo = self.new_catalogue[j]
-            R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
+            if "x" in calcu_field:
+                _frac, _tr = calcu_field.split("x")
+                R = float(_frac)*self.prop['R'][i:i+1][_tr].in_units('kpc')
+            else:
+                R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
+
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
                 boxsize = halo.properties['boxsize'].in_units('kpc')
@@ -494,7 +505,11 @@ class halo_props:
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
                 for r in calcu_field:
-                    R = self.prop['R'][i:i+1][r].in_units('kpc')
+                    if "x" in r:
+                        _frac, _tr = r.split("x")
+                        R = float(_frac)*self.prop['R'][i:i+1][_tr].in_units('kpc')
+                    else:
+                        R = self.prop['R'][i:i+1][r].in_units('kpc')
                     subgas = halo.gas[pnb.filt.Annulus(R, (thickness + 1) * R)]
                     if additional_filt is None:
                         hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
@@ -574,7 +589,12 @@ class halo_props:
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
                 for r in radii:
-                    R = self.prop['R'][i:i+1][r].in_units('kpc')
+                    if "x" in r:
+                        _frac, _tr = r.split("x")
+                        R = float(_frac)*self.prop['R'][i:i+1][_tr].in_units('kpc')
+                    else:
+                        R = self.prop['R'][i:i+1][r].in_units('kpc')
+                        
                     subgas = halo.gas[pnb.filt.Sphere(R)]
                     if additional_filt is None:
                         hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
