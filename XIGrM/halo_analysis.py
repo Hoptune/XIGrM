@@ -397,8 +397,10 @@ class halo_props:
             if "x" in calcu_field:
                 _frac, _tr = calcu_field.split("x")
                 R = float(_frac)*self.prop['R'][i:i+1][_tr].in_units('kpc')
+                _append = "_" + _frac
             else:
                 R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
+                _append = ""
 
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
@@ -415,28 +417,28 @@ class halo_props:
                             pnb.filt.LowPass('nh', nh_cut) & additional_filt
                 hot_diffuse_gas_ = subsim.gas[hot_diffuse_filt]
                 # cal_tweight can return the sum of weight_type at the same time.
-                self.prop['T']['x'][i], self.prop['L']['x'][i] = \
+                self.prop['T']['x' + _append][i], self.prop['L']['x' + _append][i] = \
                         cal_tweight(hot_diffuse_gas_, weight_type='Lx')
-                self.prop['T']['x_cont'][i], self.prop['L']['x_cont'][i] = \
+                self.prop['T']['x_cont' + _append][i], self.prop['L']['x_cont' + _append][i] = \
                         cal_tweight(hot_diffuse_gas_, weight_type='Lx_cont')
-                self.prop['T']['mass'][i], _= cal_tweight(hot_diffuse_gas_, weight_type='mass')
-                self.prop['T']['spec'][i] = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
+                self.prop['T']['mass' + _append][i], _= cal_tweight(hot_diffuse_gas_, weight_type='mass')
+                self.prop['T']['spec' + _append][i] = pnb.array.SimArray(cal_tspec(hot_diffuse_gas_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
-                self.prop['T']['xb'][i], self.prop['L']['xb'][i] = \
+                self.prop['T']['xb' + _append][i], self.prop['L']['xb' + _append][i] = \
                         cal_tweight(hot_diffuse_gas_, weight_type='Lxb')
-                self.prop['L']['xb_cont'][i] = hot_diffuse_gas_['Lxb_cont'].sum()
+                self.prop['L']['xb_cont' + _append][i] = hot_diffuse_gas_['Lxb_cont'].sum()
 
                 # Core-corrected temperatures:
                 # Filter:
                 corr_hot_ = hot_diffuse_gas_[~pnb.filt.Sphere(core_corr_factor*R)]
 
-                self.prop['T']['spec_corr'][i] = pnb.array.SimArray(cal_tspec(corr_hot_, \
+                self.prop['T']['spec_corr' + _append][i] = pnb.array.SimArray(cal_tspec(corr_hot_, \
                                 cal_f=cal_file, datatype=self.datatype), units='keV')
-                self.prop['T']['x_corr'][i], self.prop['L']['x_corr'][i] = cal_tweight(corr_hot_, weight_type='Lx')
-                self.prop['T']['xb_corr'][i], self.prop['L']['xb_corr'][i] = cal_tweight(corr_hot_, weight_type='Lxb')
-                self.prop['T']['x_corr_cont'][i], _ = \
+                self.prop['T']['x_corr' + _append][i], self.prop['L']['x_corr' + _append][i] = cal_tweight(corr_hot_, weight_type='Lx')
+                self.prop['T']['xb_corr' + _append][i], self.prop['L']['xb_corr' + _append][i] = cal_tweight(corr_hot_, weight_type='Lxb')
+                self.prop['T']['x_corr_cont' + _append][i], _ = \
                                         cal_tweight(corr_hot_, weight_type='Lx_cont')
-                self.prop['T']['mass_corr'][i], _ = cal_tweight(corr_hot_, weight_type='mass')
+                self.prop['T']['mass_corr' + _append][i], _ = cal_tweight(corr_hot_, weight_type='mass')
             
                 halo['pos'] = original_pos
             if ((i // 100) != (k // 100)) and self.verbose:
@@ -594,7 +596,7 @@ class halo_props:
                         R = float(_frac)*self.prop['R'][i:i+1][_tr].in_units('kpc')
                     else:
                         R = self.prop['R'][i:i+1][r].in_units('kpc')
-                        
+
                     subgas = halo.gas[pnb.filt.Sphere(R)]
                     if additional_filt is None:
                         hot_diffuse_filt = pnb.filt.HighPass('temp', temp_cut) & \
