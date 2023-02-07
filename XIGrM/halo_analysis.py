@@ -551,13 +551,15 @@ class halo_props:
 
     def calcu_metallicity(self, halo_id_list=[], elements=['H', 'O', 'Si', 'Fe'], \
                 radii=['500'], temp_cut='5e5 K', nh_cut='0.13 cm**-3', \
-                additional_filt=None, weight_types=['mass', 'Lx']):
+                additional_filt=None, weight_types=['mass', 'Lx'], metal_idx=None):
 
-        if self.datatype[:5] == 'gizmo':
+        if metal_idx is not None:
+            self.metal_idx = metal_idx
+        elif self.datatype[:5] == 'gizmo':
             self.metal_idx = {'He': 1, 'C': 2, 'N': 3, 'O': 4, \
                 'Ne': 5, 'Mg': 6, 'Si': 7, 'S': 8, 'Ca': 9, 'Fe': 10}
         else:
-            raise Exception('Currently only support GIZMO.')
+            raise Exception('Must provide metal_idx or use the default GIZMO settings.')
         init_zeros = np.zeros(self.length)
         field_names = []
         for ele in elements:
