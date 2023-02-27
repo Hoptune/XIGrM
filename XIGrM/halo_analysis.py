@@ -548,6 +548,19 @@ class halo_props:
                 print('            Calculating entropies... {:7} / {}'\
                             .format(j, list_length), end='\r')
             k = i
+            
+    def init_metallicity(self, elements, radii, weight_types):
+        init_zeros = np.zeros(self.length)
+        field_names = []
+        for ele in elements:
+            for rad in radii:
+                for weight_type in weight_types:
+                    field_names.append('Z_' + ele + rad + weight_type)
+        init_prop_table = Table([init_zeros for _ in range(len(field_names))])
+        self.prop['metals'] = Table(init_prop_table, names=field_names)
+        self.prop['metals'] = pnb.array.SimArray(self.prop['metals'], units='cm**-3')
+        self.field['metals'] = field_names
+        self.field_units['metals'] = 'cm**-3'
 
     def calcu_metallicity(self, halo_id_list=[], elements=['H', 'O', 'Si', 'Fe'], \
                 radii=['500'], temp_cut='5e5 K', nh_cut='0.13 cm**-3', \
@@ -560,17 +573,9 @@ class halo_props:
                 'Ne': 5, 'Mg': 6, 'Si': 7, 'S': 8, 'Ca': 9, 'Fe': 10}
         else:
             raise Exception('Must provide metal_idx or use the default GIZMO settings.')
-        init_zeros = np.zeros(self.length)
-        field_names = []
-        for ele in elements:
-            for rad in radii:
-                for weight_type in weight_types:
-                    field_names.append('Z_' + ele + rad + weight_type)
-        init_prop_table = Table([init_zeros for _ in range(len(field_names))])
-        self.prop['metals'] = Table(init_prop_table, names=field_names)
-        self.prop['metals'] = pnb.array.SimArray(self.prop['metals'], units='cm**-3')
-        self.field['metals'] = field_names
-        self.field_units['metals'] = 'cm**-3'
+        
+        if 'metals' not in self.prop:
+            self.init_metallicity(elements, radii, weight_types)
 
         halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
         if len(halo_id_list) == 0:
