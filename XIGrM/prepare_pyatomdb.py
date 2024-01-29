@@ -126,7 +126,7 @@ def calculate_continuum_emission(energy_bins, specific_elements = atomicNumbers,
             #                                        elements = [a],\
             #                                        linefile = line_file,\
             #                                        cocofile = coco_file)
-			cie.set_abund(a, 1.)
+            cie.set_abund(a, 1.)
             spec = cie.return_spectrum(cut_kev[i], nearest=True, dolines = False, dopseudo = False)
 			
             if a in atomic:
@@ -179,10 +179,10 @@ def calculate_line_emission(energy_bins, specific_elements = atomicNumbers, retu
     if return_spectra:
         line_spectra = np.zeros((len(atomic) + 1, len(line_cut), len(energy_bins)-1))
 		
-	cie = pyatomdb.spectrum.CIESession(linefile = line_file, cocofile = coco_file)
-	cie.set_response(energy_bins, raw=True)
-	cie.set_abund(atomic_in_atomdb, 0.)
-	cie.set_eebrems(False)
+    cie = pyatomdb.spectrum.CIESession(linefile = line_file, cocofile = coco_file)
+    cie.set_response(energy_bins, raw=True)
+    cie.set_abund(atomic_in_atomdb, 0.)
+    cie.set_eebrems(False)
 		
     for i in range(0, len(line_cut)):
         print('Line Temperature: %g K' % line_cut[i])
@@ -192,7 +192,7 @@ def calculate_line_emission(energy_bins, specific_elements = atomicNumbers, retu
             #                                        elements = [a],\
             #                                        linefile = line_file,\
             #                                        cocofile = coco_file)
-			cie.set_abund(a, 1.)
+            cie.set_abund(a, 1.)
             spec = cie.return_spectrum(line_cut_kev[i], nearest=True, dolines = True, docont = False, dopseudo = True)
 			
             if a in atomic:
