@@ -113,7 +113,7 @@ def calculate_continuum_emission(energy_bins, specific_elements = atomicNumbers,
     if return_spectra:
         cont_spectra = np.zeros((len(atomic) + 1, len(cut), len(energy_bins)-1))
 		
-    cie = pyatomdb.spectrum.CIESession(linefile = line_file, cocofile = coco_file)
+	cie = pyatomdb.spectrum.CIESession(linefile = line_file, cocofile = coco_file)
 	cie.set_response(energy_bins, raw=True)
 	cie.set_abund(atomic_in_atomdb, 0.)
 	cie.set_eebrems(False)
