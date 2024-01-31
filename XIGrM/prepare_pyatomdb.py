@@ -115,7 +115,6 @@ def calculate_continuum_emission(energy_bins, specific_elements = atomicNumbers,
 		
     cie = pyatomdb.spectrum.CIESession(linefile = line_file, cocofile = coco_file)
     cie.set_response(energy_bins, raw=True)
-    cie.set_abund(atomic_in_atomdb, 0.)
     cie.set_eebrems(False)
 
     for i in range(0, len(cut)):
@@ -126,9 +125,9 @@ def calculate_continuum_emission(energy_bins, specific_elements = atomicNumbers,
             #                                        elements = [a],\
             #                                        linefile = line_file,\
             #                                        cocofile = coco_file)
+            cie.set_abund(atomic_in_atomdb, 0.)
             cie.set_abund(a, 1.)
             spec = cie.return_spectrum(cut_kev[i], nearest=True, dolines = False, dopseudo = False)
-            cie.set_abund(a, 0.)
             
             if a in atomic:
                 real_idx = k
@@ -182,7 +181,6 @@ def calculate_line_emission(energy_bins, specific_elements = atomicNumbers, retu
 		
     cie = pyatomdb.spectrum.CIESession(linefile = line_file, cocofile = coco_file)
     cie.set_response(energy_bins, raw=True)
-    cie.set_abund(atomic_in_atomdb, 0.)
     cie.set_eebrems(False)
 		
     for i in range(0, len(line_cut)):
@@ -193,9 +191,9 @@ def calculate_line_emission(energy_bins, specific_elements = atomicNumbers, retu
             #                                        elements = [a],\
             #                                        linefile = line_file,\
             #                                        cocofile = coco_file)
+            cie.set_abund(atomic_in_atomdb, 0.)
             cie.set_abund(a, 1.)
             spec = cie.return_spectrum(line_cut_kev[i], nearest=True, dolines = True, docont = False, dopseudo = True)
-            cie.set_abund(a, 0.)
             
             if a in atomic:
                 real_idx = k
