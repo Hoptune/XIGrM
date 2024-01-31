@@ -280,7 +280,7 @@ def AG89_abundances(atomic_numbers):
     ag89 = np.array(ag89)
     return ag89
 
-def load_emissivity_file(filename, specific_elements=None, energy_band=[0.5, 2.0], n_bins=1000):
+def load_emissivity_file(filename, specific_elements=None, energy_band=[0.5, 2.0], n_bins=10000):
     '''
     Load the emissivity file calculated based on pyatomdb.
     If filename can't be loaded, then will calculate and save
