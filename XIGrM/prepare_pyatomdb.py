@@ -128,7 +128,8 @@ def calculate_continuum_emission(energy_bins, specific_elements = atomicNumbers,
             #                                        cocofile = coco_file)
             cie.set_abund(a, 1.)
             spec = cie.return_spectrum(cut_kev[i], nearest=True, dolines = False, dopseudo = False)
-			
+			cie.set_abund(a, 0.)
+            
             if a in atomic:
                 real_idx = k
                 print('Atomic number: %d' % atomic[k])
@@ -194,7 +195,8 @@ def calculate_line_emission(energy_bins, specific_elements = atomicNumbers, retu
             #                                        cocofile = coco_file)
             cie.set_abund(a, 1.)
             spec = cie.return_spectrum(line_cut_kev[i], nearest=True, dolines = True, docont = False, dopseudo = True)
-			
+			cie.set_abund(a, 0.)
+            
             if a in atomic:
                 real_idx = k
                 print('Atomic number: %d' % atomic[k])
