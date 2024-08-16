@@ -177,9 +177,9 @@ class halo_props:
         in_idx, = np.where(host_in_IDlist)
         _not_in_ = np.invert(host_in_IDlist)
         not_in_idx, = np.where(_not_in_)
-        self.hostid = np.zeros(self.length, dtype=np.int)
+        self.hostid = np.zeros(self.length, dtype=int)
         self.hostid[in_idx] = self.ID_list.loc[self.dict['hostHalo'][in_idx]]['halo_id']
-        self.hostid = np.ma.array(self.hostid, dtype=np.int, mask=_not_in_)
+        self.hostid = np.ma.array(self.hostid, dtype=int, mask=_not_in_)
         # loc method enables using ahfidname as index
         if len(not_in_idx) > 0:
             for error in not_in_idx:
@@ -248,7 +248,7 @@ class halo_props:
             Maximum value for the shrinking sphere method. See 
             get_index() in calculate_R.py documentation for detail.
         '''
-        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        halo_id_list = np.array(halo_id_list, dtype=int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
                 raise Exception('Must get_group_list (or init_relationship) first!')
@@ -298,7 +298,7 @@ class halo_props:
             nh limit above which gas particles are considered 
             as star forming.
         '''
-        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        halo_id_list = np.array(halo_id_list, dtype=int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
                 raise Exception('Must get_group_list (or init_relationship) first!')
@@ -382,7 +382,7 @@ class halo_props:
             Any additional filter used to constrain the hot diffuse 
             gas we are investigating.
         '''
-        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        halo_id_list = np.array(halo_id_list, dtype=int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
                 raise Exception('Must get_group_list (or init_relationship) first!')
@@ -488,7 +488,7 @@ class halo_props:
             gas we are investigating.
         '''
         # thickness = pnb.array.SimArray(thickness, 'kpc')
-        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        halo_id_list = np.array(halo_id_list, dtype=int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
                 raise Exception('Must get_group_list (or init_relationship) first!')
@@ -579,7 +579,7 @@ class halo_props:
         if 'metals' not in self.prop:
             self.init_metallicity(elements, radii, weight_types)
 
-        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        halo_id_list = np.array(halo_id_list, dtype=int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
                 raise Exception('Must get_group_list (or init_relationship) first!')
@@ -653,7 +653,7 @@ class halo_props:
             field = self.field
         if units is None:
             field_units = self.field_units
-        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        halo_id_list = np.array(halo_id_list, dtype=int).reshape(-1)
         if len(halo_id_list) == 0:
             halo_id_list = self.group_list
         with h5py.File(filename, "w") as f:
@@ -678,7 +678,7 @@ class halo_props:
         of children).
         '''
         self.host_list = []
-        self.tophost = np.zeros(self.length).astype(np.int)
+        self.tophost = np.zeros(self.length).astype(int)
         self.children = [set() for _ in range(self.length)]
         k = 0
         for i in range(self.length):
@@ -861,7 +861,7 @@ class halo_props:
             Any additional filter used to constrain the hot diffuse 
             gas we are investigating.
         '''
-        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        halo_id_list = np.array(halo_id_list, dtype=int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
                 raise Exception('Must get_group_list (or init_relationship) first!')
@@ -942,7 +942,7 @@ class halo_props:
             Any additional filter used to constrain the hot diffuse 
             gas we are investigating.
         '''
-        halo_id_list = np.array(halo_id_list, dtype=np.int).reshape(-1)
+        halo_id_list = np.array(halo_id_list, dtype=int).reshape(-1)
         if len(halo_id_list) == 0:
             if not self._have_group:
                 raise Exception('Must get_group_list (or init_relationship) first!')
