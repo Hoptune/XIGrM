@@ -73,11 +73,11 @@ class halo_props:
     haloid
         List of halo_id given by property dictionary.
     IDlist
-        Table of halo_id and corresponding #ID given in the property 
+        Table of halo_id and corresponding ahfidname given in the property 
         dictionary.
     hostid
         List of the halo_id of the host halo of each halo (originally 
-        recorded in the property dictionary in the form of #ID).
+        recorded in the property dictionary in the form of ahfidname).
     new_catalogue : dict
         The new catalogue which includes all the subhalo particles 
         in its host halo. The keys of the dictionary are the indexes of 
@@ -112,7 +112,7 @@ class halo_props:
         halo_id of the halo identified as group in the catalogue.
     '''
     def __init__(self, halocatalogue, datatype, field=default_field,
-            field_units=default_units, host_id_of_top_level=0, verbose=True):
+            ahfidname="#ID", field_units=default_units, host_id_of_top_level=0, verbose=True):
         '''
         Initialization routine.
 
@@ -123,6 +123,8 @@ class halo_props:
         field
             Quantities to calculate. When changing specific_mass_field, 
             luminosity_field and temp_field, source codes must be modified.
+        ahfidname
+            ID of the host halo that AHF generates.
         datatype : str
             What kind of simulation data you are dealing with. 
             Accepted datatype for now: 'gizmo_ahf' and 'tipsy_ahf'.
@@ -164,21 +166,21 @@ class halo_props:
 
         self.dict = Table(self.dict)
         self.haloid = self.dict['halo_id']
-        IDs = self.dict['#ID']
-        self.ID_list = Table([IDs, self.haloid], names=['#ID', 'halo_id'])
+        IDs = self.dict[ahfidname]
+        self.ID_list = Table([IDs, self.haloid], names=[ahfidname, 'halo_id'])
         self.ID_list.add_row([host_id_of_top_level, host_id_of_top_level])
         
-        self.ID_list.add_index('#ID')
+        self.ID_list.add_index(ahfidname)
 
-        host_in_IDlist = np.isin(self.dict['hostHalo'], self.ID_list['#ID'])
-        # Some hostHalo id will not be listed in #ID list, this is probably due to AHF algorithm
+        host_in_IDlist = np.isin(self.dict['hostHalo'], self.ID_list[ahfidname])
+        # Some hostHalo id will not be listed in ahfidname list, this is probably due to AHF algorithm
         in_idx, = np.where(host_in_IDlist)
         _not_in_ = np.invert(host_in_IDlist)
         not_in_idx, = np.where(_not_in_)
         self.hostid = np.zeros(self.length, dtype=np.int)
         self.hostid[in_idx] = self.ID_list.loc[self.dict['hostHalo'][in_idx]]['halo_id']
         self.hostid = np.ma.array(self.hostid, dtype=np.int, mask=_not_in_)
-        # loc method enables using #ID as index
+        # loc method enables using ahfidname as index
         if len(not_in_idx) > 0:
             for error in not_in_idx:
                 self.errorlist[0][self.haloid[error]] = self.dict['hostHalo'][error]
