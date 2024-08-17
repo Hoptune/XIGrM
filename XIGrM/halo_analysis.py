@@ -157,7 +157,7 @@ class halo_props:
         
         with Pool(self.nthreads) as p:
             if self.verbose:
-                halodicts = tqdm.tqdm(p.imap(loadDictPool, range(self.length)), total=self.length)
+                halodicts = list(tqdm.tqdm(p.imap(loadDictPool, range(self.length)), total=self.length))
             else:
                 halodicts = p.imap(loadDictPool, range(self.length))
         halodicts = Table(halodicts)
@@ -802,9 +802,9 @@ class halo_props:
         
         with Pool(self.nthreads) as pool:
             if self.verbose:
-                msmsf = np.array(tqdm(pool.imap(mstar_msfgas_toPool, range(self.length)), total=self.length))
+                msmsf = np.array(list(tqdm.tqdm(pool.imap(mstar_msfgas_toPool, range(self.length)), total=self.length)))
             else:
-                msmsf = np.array(pool.map(mstar_msfgas_toPool, range(self.length)))
+                msmsf = np.array(pool.imap(mstar_msfgas_toPool, range(self.length)))
 
         sort_idx = np.argsort(msmsf[:, 0])
         self.prop['M']['total_star'] = pnb.array.SimArray(msmsf[sort_idx, 1], 'Msol')
@@ -841,7 +841,7 @@ class halo_props:
         
         with Pool(self.nthreads) as pool:
             if self.verbose:
-                selfmsmsf = np.array(tqdm(pool.imap(self_mstar_msfgas_toPool, range(self.length)), total=self.length))
+                selfmsmsf = np.array(list(tqdm.tqdm(pool.imap(self_mstar_msfgas_toPool, range(self.length)), total=self.length)))
             else:
                 selfmsmsf = np.array(pool.map(self_mstar_msfgas_toPool, range(self.length)))
         sort_idx = np.argsort(selfmsmsf[:, 0])
