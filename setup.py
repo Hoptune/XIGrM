@@ -10,4 +10,4 @@ setup(name = 'XIGrM',
       license = '',
       packages = find_packages(),
       zip_safe = False,
-      install_requires = ['numpy', 'scipy', 'h5py', 'pynbody', 'tqdm', 'astropy', 'pyatomdb>=0.10.0'])
+      install_requires = ['numpy', 'scipy', 'h5py', 'pynbody', 'tqdm', 'multiprocess', 'astropy', 'pyatomdb>=0.10.0'])

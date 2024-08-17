@@ -10,7 +10,7 @@ import astropy.constants as astroc
 import astropy.units as astrou
 import numpy as np
 import tqdm
-from multiprocessing import Pool
+from multiprocess import Pool
 import time
 import h5py
 
