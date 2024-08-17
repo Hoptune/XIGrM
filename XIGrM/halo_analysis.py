@@ -150,7 +150,7 @@ class halo_props:
         _ahfcat = self.catalogue_original
         def loadDictPool(i):
             j = i + 1
-            global _ahfcat
+            nonlocal _ahfcat
             prop = dict(_ahfcat[j].properties)
             # prop.pop('children', None)
             # prop.pop('parentid', None)
