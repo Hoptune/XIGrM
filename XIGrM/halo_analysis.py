@@ -147,9 +147,11 @@ class halo_props:
         self.ovdens = cosmology.Delta_vir(self.catalogue_original[1])
         self.nthreads = nthreads
 
+        _ahfcat = self.catalogue_original
         def loadDictPool(i):
             j = i + 1
-            prop = dict(self.catalogue_original[j].properties)
+            global _ahfcat
+            prop = dict(_ahfcat[j].properties)
             # prop.pop('children', None)
             # prop.pop('parentid', None)
             del prop['children'], prop['parentid']
