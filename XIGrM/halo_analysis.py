@@ -147,21 +147,25 @@ class halo_props:
         self.ovdens = cosmology.Delta_vir(self.catalogue_original[1])
         self.nthreads = nthreads
 
-        _ahfcat = self.catalogue_original
-        def loadDictPool(i):
-            j = i + 1
-            nonlocal _ahfcat
-            prop = dict(_ahfcat[j].properties)
-            # prop.pop('children', None)
-            # prop.pop('parentid', None)
-            del prop['children'], prop['parentid']
-            return prop
+        # _ahfcat = self.catalogue_original
+        # def loadDictPool(i):
+        #     j = i + 1
+        #     nonlocal _ahfcat
+        #     prop = dict(_ahfcat[j].properties)
+        #     prop.pop('children', None)
+        #     prop.pop('parentid', None)
+        #     # del prop['children'], prop['parentid']
+            # return prop
         
-        with Pool(self.nthreads) as p:
-            if self.verbose:
-                halodicts = list(tqdm.tqdm(p.imap_unordered(loadDictPool, range(self.length)), total=self.length))
-            else:
-                halodicts = list(p.imap_unordered(loadDictPool, range(self.length)))
+        # with Pool(self.nthreads) as p:
+        #     if self.verbose:
+        #         halodicts = list(tqdm.tqdm(p.imap_unordered(loadDictPool, range(self.length)), total=self.length))
+        #     else:
+        #         halodicts = list(p.imap_unordered(loadDictPool, range(self.length)))
+        halodicts = halocatalogue.get_properties_all_halos()
+        del halodicts['children'], halodicts['parent']
+        _zerooffset = halocatalogue.number_mapper.zero_offset
+        halodicts['halo_id'] = np.arange(len(halocatalogue)).astype(int) + _zerooffset
         halodicts = Table(halodicts)
         halodicts.sort('halo_id')
 
@@ -247,8 +251,8 @@ class halo_props:
             above which host halos are considered as groups.
         '''
         self.get_children()
-        self.get_new_catalogue(include_ = include_sub)
-        self.get_galaxy(g_low_limit = galaxy_low_limit, mode=galaxy_mode)
+        self.get_new_catalogue(include_=include_sub)
+        self.get_galaxy(g_low_limit=galaxy_low_limit, mode=galaxy_mode)
         self.get_group_list(N_galaxy)
         self.get_center()
     
