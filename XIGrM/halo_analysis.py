@@ -14,12 +14,9 @@ from multiprocess import Pool
 import time
 import h5py
 
-from . import prepare_pyatomdb as ppat
 from . import calculate_R as cR
 from . import cosmology
-from . import gas_properties as g_p
 from .X_properties import cal_tspec, cal_tweight
-import pyatomdb
 
 # The field here is only for initialization. If you 
 # want to change the calculated quantities, you will 
