@@ -683,9 +683,10 @@ class halo_props:
             Path to save the object.
         '''
         if not os.path.isfile(path):
-            self.new_catalogue = None
-            self.catalogue_original = None
-            np.save(path, {**self.__dict__})
+            savedict = self.__dict__.copy()
+            _ = savedict.pop("new_catalogue", None)
+            _ = savedict.pop("catalogue_original", None)
+            np.save(path, {**savedict})
         else:
             raise Exception('File already exists!')
 
