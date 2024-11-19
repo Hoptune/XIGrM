@@ -142,8 +142,8 @@ class halo_props:
             self.errorlist = [{}, {}, {}]
             self.verbose = verbose
 
-            self.rho_crit = pnb.analysis.cosmology.rho_crit(f=self.catalogue_original[1], unit='Msol kpc**-3')
-            self.ovdens = cosmology.Delta_vir(self.catalogue_original[1])
+            self.rho_crit = pnb.analysis.cosmology.rho_crit(f=self.catalogue_original[self.catalogue_original.keys()[0]], unit='Msol kpc**-3')
+            self.ovdens = cosmology.Delta_vir(self.catalogue_original[self.catalogue_original.keys()[0]])
             self.nthreads = nthreads
 
             # _ahfcat = self.catalogue_original
@@ -163,8 +163,11 @@ class halo_props:
             #         halodicts = list(p.imap_unordered(loadDictPool, range(self.length)))
             halodicts = halocatalogue.get_properties_all_halos()
             del halodicts['children'], halodicts['parent']
-            _zerooffset = halocatalogue.number_mapper.zero_offset
-            halodicts['halo_id'] = np.arange(len(halocatalogue)).astype(int) + _zerooffset
+            if pnb.__version__ >="2.0.0":
+                halodicts['halo_id'] = halocatalogue.number_mapper.number_to_index(halocatalogue.keys())
+            else:
+                _zerooffset = halocatalogue.number_mapper.zero_offset
+                halodicts['halo_id'] = np.arange(len(halocatalogue)).astype(int) + _zerooffset
             halodicts = Table(halodicts)
             halodicts.sort('halo_id')
 
@@ -191,6 +194,10 @@ class halo_props:
             # self.dict = Table(self.dict)
 
             self.dict = halodicts
+            if pnb.__version__ >="2.0.0":
+                self.dict['a'] = halocatalogue[halocatalogue.keys()[0]].properties['a']
+                self.dict['h'] = halocatalogue[halocatalogue.keys()[0]].properties['h']
+
             self.haloid = self.dict['halo_id']
             IDs = self.dict[ahfidname]
             self.ID_list = Table([IDs, self.haloid], names=[ahfidname, 'halo_id'])
@@ -745,7 +752,7 @@ class halo_props:
                 print('Generating children list... Halo: {:7} / {}'.format(j, self.length), end='\r')
             k = j
             prop = self.dict[i]
-            hostID = prop['hostHalo']
+            hostID = prop['hostHalo']   # this is in AHF halo ID
             if j in self.errorlist[0]:
                 self.errorlist[1][j] = hostID
                 continue
@@ -757,7 +764,10 @@ class halo_props:
                     if hostID < 0:
                         print('Make sure you\'ve used the correct host ID of the top-level halos!')
                     host_haloid = self.ID_list.loc[hostID]['halo_id']
-                    self.children[host_haloid - 1].add(j)
+                    if pnb.__version__ >="2.0.0":
+                        self.children[host_haloid - 1].add(self.ID_list['ID'][j])
+                    else:
+                        self.children[host_haloid - 1].add(j)
                     temphost = j
                     while temphost != self.host_id_of_top_level:
                         temphost2 = temphost
@@ -790,11 +800,18 @@ class halo_props:
                 if ((i // 100) != (k // 100)) and self.verbose:
                     print('Generating new catalogue... Halo: {:7} / {}'.format(j, self.length), end='\r')
                     k = i
-                if len(self.children[i]) == 0:
-                    self.new_catalogue[j] = self.catalogue_original[j]
+                if pnb.__version__ >="2.0.0":
+                    if len(self.children[i]) == 0:
+                        self.new_catalogue[j] = self.catalogue_original[self.ID_list['ID'][j]]
+                    else:
+                        union_list = [self.ID_list['ID'][j]] + list(self.children[i])
+                        self.new_catalogue[j] = get_union(self.catalogue_original, union_list)
                 else:
-                    union_list = [j] + list(self.children[i])
-                    self.new_catalogue[j] = get_union(self.catalogue_original, union_list)
+                    if len(self.children[i]) == 0:
+                        self.new_catalogue[j] = self.catalogue_original[j]
+                    else:
+                        union_list = [j] + list(self.children[i])
+                        self.new_catalogue[j] = get_union(self.catalogue_original, union_list)
         else:
             self.new_include_sub = False
             self.new_catalogue = self.catalogue_original
@@ -847,8 +864,13 @@ class halo_props:
             if ((i // 100) != (k // 100)) and self.verbose:
                 print('Calculating total stellar masses... Halo: {:7} / {}'.format(j, self.length), end='\r')
                 k = i
-            self.prop['M']['total_star'][i] = self.new_catalogue[j].star['mass'].sum()
-            sf_gas = self.new_catalogue[j].gas[pnb.filt.LowPass('temp', '3e4 K')]
+            if pnb.__version__ >="2.0.0":
+                l = self.ID_list['ID'][j]
+                self.prop['M']['total_star'][i] = self.new_catalogue[l].star['mass'].sum()
+                sf_gas = self.new_catalogue[l].gas[pnb.filt.LowPass('temp', '3e4 K')]
+            else:
+                self.prop['M']['total_star'][i] = self.new_catalogue[j].star['mass'].sum()
+                sf_gas = self.new_catalogue[j].gas[pnb.filt.LowPass('temp', '3e4 K')]
             # sf_gas = self.new_catalogue[j].gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
             self.prop['M']['total_sfgas'][i] = sf_gas['mass'].sum()
             # sf_gas, i.e., star forming gas, is used in the definition of resolved galaxies in Liang's Figure2.
@@ -893,7 +915,11 @@ class halo_props:
                 self_Msfgas = self.prop['M']['total_sfgas'][i]
             else:
                 children_union = get_union(self.new_catalogue, list(children_list))
-                children_union_within_ = self.new_catalogue[j].intersect(children_union)
+                if pnb.__version__ >="2.0.0":
+                    l = self.ID_list['ID'][j]
+                    children_union_within_ = self.new_catalogue[l].intersect(children_union)
+                else:
+                    children_union_within_ = self.new_catalogue[j].intersect(children_union)
                 self_Mstar = self.prop['M']['total_star'][i] - children_union_within_.star['mass'].sum()
                 # if mode == 'include cold gas':
                 sf_gas_union = children_union_within_.gas[pnb.filt.LowPass('temp', '3e4 K')]
