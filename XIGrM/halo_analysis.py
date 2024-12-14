@@ -112,7 +112,7 @@ class halo_props:
     '''
     def __init__(self, halocatalogue, datatype, attrpath=None, field=default_field,
             ahfidname="ID", field_units=default_units,
-            host_id_of_top_level=0, verbose=True, nthreads=1):
+            host_id_of_top_level=0, nthreads=1):
         '''
         Initialization routine.
 
@@ -141,7 +141,7 @@ class halo_props:
             init_zeros = np.zeros(self.length)
             self.host_id_of_top_level = host_id_of_top_level
             self.errorlist = [{}, {}, {}]
-            self.verbose = verbose
+            # self.verbose = verbose
 
             self.rho_crit = pnb.analysis.cosmology.rho_crit(
                 f=self.catalogue_original[self.number_mapper.index_to_number(0)],
@@ -253,24 +253,25 @@ class halo_props:
         
         if rdict == None:
             rdict = {'vir': self.ovdens, '200': 200, '500': 500, '2500': 2500}
-        t1 = 0; t2 = 0
-        list_length = np.array(list(halo_id_list)).max()
+        # t1 = 0; t2 = 0
+        # list_length = np.array(list(halo_id_list)).max()
         k = 0
-        for j in halo_id_list:
+        print('Calculating radii and masses...')
+        for j in tqdm.tqdm(halo_id_list):
             i = self.number_mapper.number_to_index(j)
             prop = self.dict[i]
-            t1 = time.time()
+            # t1 = time.time()
             MassRadii = cR.get_radius(self.new_catalogue[j], \
                     overdensities=list(rdict.values()), rho_crit=self.rho_crit, \
                         prop=prop, precision=precision, cen=self.center[i], rmax=rmax)
             for key in rdict:
                 self.prop['R'][key][i] = MassRadii[1][rdict[key]]
                 self.prop['M'][key][i] = MassRadii[0][rdict[key]]
-            t2 = time.time()
-            if ((i // 100) != (k // 100)) and self.verbose:
-                print('Calculating radii and masses... {:7} / {}, time: \
-                        {:.5f}s'.format(j, list_length, t2 - t1), end='\r')
-            k = i
+            # t2 = time.time()
+            # if ((i // 100) != (k // 100)) and self.verbose:
+            #     print('Calculating radii and masses... {:7} / {}, time: \
+            #             {:.5f}s'.format(j, list_length, t2 - t1), end='\r')
+            # k = i
         self._have_radii = True
     
     def calcu_specific_masses(self, halo_id_list=[], \
@@ -301,12 +302,13 @@ class halo_props:
         if not self._have_radii:
             raise Exception('Must get_radii_masses first!')
         
-        list_length = np.array(list(halo_id_list)).max()
+        # list_length = np.array(list(halo_id_list)).max()
 
-        k = 0
-        for j in halo_id_list:
+        # k = 0
+        print('Calculating specific masses...')
+        for j in tqdm.tqdm(halo_id_list):
             i = self.number_mapper.number_to_index(j)
-            prop = self.dict[i]
+            # prop = self.dict[i]
             center = self.center[i]
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
@@ -340,9 +342,9 @@ class halo_props:
                     self.prop['M']['igrm' + r][i] = hot_diffuse_gas_['mass'].sum()
                 
                 halo['pos'] = original_pos
-            if ((i // 100) != (k // 100)) and self.verbose:
-                print('Calculating specific masses... {:7} / {}'.format(j, list_length), end='\r')
-            k = i
+            # if ((i // 100) != (k // 100)) and self.verbose:
+            #     print('Calculating specific masses... {:7} / {}'.format(j, list_length), end='\r')
+            # k = i
 
     def calcu_temp_lumi(self, cal_file, halo_id_list=[], \
                     core_corr_factor=0.15, calcu_field='500', \
@@ -385,9 +387,10 @@ class halo_props:
         if not self._have_radii:
             raise Exception('Must get_radii_masses first!')
         
-        list_length = np.array(list(halo_id_list)).max()
-        k = 0
-        for j in halo_id_list:
+        # list_length = np.array(list(halo_id_list)).max()
+        # k = 0
+        print('Calculating temperatures and luminosities...')
+        for j in tqdm.tqdm(halo_id_list):
             i = self.number_mapper.number_to_index(j)
             center = self.center[i]
             halo = self.new_catalogue[j]
@@ -438,10 +441,10 @@ class halo_props:
                 self.prop['T']['mass_corr' + _append][i], _ = cal_tweight(corr_hot_, weight_type='mass')
             
                 halo['pos'] = original_pos
-            if ((i // 100) != (k // 100)) and self.verbose:
-                print('Calculating temperatures and luminosities... {:7} / {}'\
-                            .format(j, list_length), end='\r')
-            k = i
+            # if ((i // 100) != (k // 100)) and self.verbose:
+            #     print('Calculating temperatures and luminosities... {:7} / {}'\
+            #                 .format(j, list_length), end='\r')
+            # k = i
 
         self._have_temp = True
 
@@ -491,9 +494,10 @@ class halo_props:
         if not self._have_radii:
             raise Exception('Must get_radii_masses first!')
 
-        list_length = np.array(list(halo_id_list)).max()
-        k = 0
-        for j in halo_id_list:
+        # list_length = np.array(list(halo_id_list)).max()
+        # k = 0
+        print('Calculating entropies...')
+        for j in tqdm.tqdm(halo_id_list):
             i = self.number_mapper.number_to_index(j)
             center = self.center[i]
             halo = self.new_catalogue[j]
@@ -541,10 +545,10 @@ class halo_props:
                         self.prop['S'][r][i] = tempTspec/(avg_ne)**(2, 3)
                 
                 halo['pos'] = original_pos
-            if ((i // 100) != (k // 100)) and self.verbose:
-                print('            Calculating entropies... {:7} / {}'\
-                            .format(j, list_length), end='\r')
-            k = i
+            # if ((i // 100) != (k // 100)) and self.verbose:
+            #     print('            Calculating entropies... {:7} / {}'\
+            #                 .format(j, list_length), end='\r')
+            # k = i
             
     def init_metallicity(self, elements, radii, weight_types):
         init_zeros = np.zeros(self.length)
@@ -582,9 +586,10 @@ class halo_props:
         if not self._have_radii:
             raise Exception('Must get_radii_masses first!')
 
-        list_length = np.array(list(halo_id_list)).max()
-        k = 0
-        for j in halo_id_list:
+        # list_length = np.array(list(halo_id_list)).max()
+        # k = 0
+        print('Calculating metallicities...')
+        for j in tqdm.tqdm(halo_id_list):
             i = self.number_mapper.number_to_index(j)
             center = self.center[i]
             halo = self.new_catalogue[j]
@@ -622,10 +627,10 @@ class halo_props:
                             self.prop['metals']['Z_' + ele + r + weight_type][i] = \
                                             (totZx/weight_sum)
                 halo['pos'] = original_pos
-            if ((i // 100) != (k // 100)) and self.verbose:
-                print('            Calculating metallicities... {:7} / {}'\
-                            .format(j, list_length), end='\r')
-            k = i
+            # if ((i // 100) != (k // 100)) and self.verbose:
+            #     print('            Calculating metallicities... {:7} / {}'\
+            #                 .format(j, list_length), end='\r')
+            # k = i
 
     def saveattrs(self, path):
         '''
@@ -692,12 +697,13 @@ class halo_props:
         self.host_list = []
         self.tophost = np.zeros(self.length).astype(int)
         self.children = [set() for _ in range(self.length)]
-        k = 0
-        for i in range(self.length):
+        # k = 0
+        print('Generating children list...')
+        for i in tqdm.tqdm(range(self.length)):
             j = self.number_mapper.index_to_number(i)
-            if ((j // 100) != (k // 100)) and self.verbose:
-                print('Generating children list... Halo: {:7} / {}'.format(j, self.length), end='\r')
-            k = j
+            # if ((j // 100) != (k // 100)) and self.verbose:
+            #     print('Generating children list... Halo: {:7} / {}'.format(j, self.length), end='\r')
+            # k = j
             prop = self.dict[i]
             hostID = prop['hostHalo']
             if j in self.errorlist[0]:
@@ -738,12 +744,13 @@ class halo_props:
         if include_sub:
             self.new_include_sub = True
             self.new_catalogue = {}
-            k = 0
-            for i in range(self.length):
+            # k = 0
+            print('Generating new catalogue...')
+            for i in tqdm.tqdm(range(self.length)):
                 j = self.number_mapper.index_to_number(i)
-                if ((i // 100) != (k // 100)) and self.verbose:
-                    print('Generating new catalogue... Halo: {:7} / {}'.format(j, self.length), end='\r')
-                    k = i
+                # if ((i // 100) != (k // 100)) and self.verbose:
+                #     print('Generating new catalogue... Halo: {:7} / {}'.format(j, self.length), end='\r')
+                #     k = i
                 if len(self.children[i]) == 0:
                     self.new_catalogue[j] = self.catalogue_original[j]
                 else:
@@ -779,12 +786,13 @@ class halo_props:
         # The galaxies within subhalos (i.e., subhalos themselves) will also be taken into account.
     
 
-        k = 0
-        for i in range(self.length):
+        # k = 0
+        print('Calculating total stellar masses...')
+        for i in tqdm.tqdm(range(self.length)):
             j = self.number_mapper.index_to_number(i)
-            if ((i // 100) != (k // 100)) and self.verbose:
-                print('Calculating total stellar masses... Halo: {:7} / {}'.format(j, self.length), end='\r')
-                k = i
+            # if ((i // 100) != (k // 100)) and self.verbose:
+            #     print('Calculating total stellar masses... Halo: {:7} / {}'.format(j, self.length), end='\r')
+            #     k = i
             self.prop['M']['total_star'][i] = self.new_catalogue[j].star['mass'].sum()
             sf_gas = self.new_catalogue[j].gas[pnb.filt.LowPass('temp', '3e4 K')]
             # sf_gas = self.new_catalogue[j].gas[pnb.filt.HighPass('nh', '0.13 cm**-3')]
@@ -793,12 +801,13 @@ class halo_props:
             # But seems that Liang didn't plot Figure 2 using the concept of resolved galaxies.
 
         low_limit = g_low_limit.in_units(self.prop['M']['total_star'].units)
-        k = 0
-        for i in range(self.length):
+        # k = 0
+        print('Identifying galaxies...')
+        for i in tqdm.tqdm(range(self.length)):
             j = self.number_mapper.index_to_number(i)
-            if ((i // 100) != (k // 100)) and self.verbose:
-                print('            Identifying galaxies... Halo: {:7} / {}'.format(j, self.length), end='\r')
-                k = i
+            # if ((i // 100) != (k // 100)) and self.verbose:
+            #     print('            Identifying galaxies... Halo: {:7} / {}'.format(j, self.length), end='\r')
+            #     k = i
             children_list = np.array(list(self.children[i]))
             if len(children_list) == 0:
                 self_Mstar = self.prop['M']['total_star'][i]
@@ -889,12 +898,13 @@ class halo_props:
         if not self._have_new_catalogue:
             raise Exception('Must get_new_catalogue first!')
         
-        list_length = np.array(list(halo_id_list)).max()
-        for j in halo_id_list:
+        # list_length = np.array(list(halo_id_list)).max()
+        print('Calculating temperatures and luminosities...')
+        for j in tqdm.tqdm(halo_id_list):
             i = self.number_mapper.number_to_index(j)
-            if self.verbose:
-                print('Calculating temperatures and luminosities... {:7} / {}'\
-                            .format(j, list_length), end='\r')
+            # if self.verbose:
+            #     print('Calculating temperatures and luminosities... {:7} / {}'\
+            #                 .format(j, list_length), end='\r')
             center = self.center[i]
             halo = self.new_catalogue[j]
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
@@ -969,13 +979,13 @@ class halo_props:
             raise Exception('Must get_radii_masses first!')
         if not self._have_new_catalogue:
             raise Exception('Must get_new_catalogue first!')
-        
-        list_length = np.array(list(halo_id_list)).max()
-        for j in halo_id_list:
+        print('Calculating spectroscopic temperatures...')
+        # list_length = np.array(list(halo_id_list)).max()
+        for j in tqdm.tqdm(halo_id_list):
             i = self.number_mapper.number_to_index(j)
-            if self.verbose:
-                print('Calculating spectroscopic temperatures... {:7} / {}'\
-                            .format(j, list_length), end='\r')
+            # if self.verbose:
+            #     print('Calculating spectroscopic temperatures... {:7} / {}'\
+            #                 .format(j, list_length), end='\r')
             center = self.center[i]
             halo = self.new_catalogue[j]
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
