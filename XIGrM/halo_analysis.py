@@ -153,7 +153,7 @@ class halo_props:
             halodicts = halocatalogue.get_properties_all_halos()
             del halodicts['children'], halodicts['parent']
             halodicts = Table(halodicts)
-            halodicts['halo_number'] = self.index_to_number(np.arange(len(halocatalogue)))
+            halodicts['halo_number'] = self.number_mapper.index_to_number(np.arange(len(halocatalogue)))
 
             self.dict = halodicts
             self.haloid = self.dict['halo_number']
