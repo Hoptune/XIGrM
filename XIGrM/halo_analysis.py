@@ -265,11 +265,11 @@ class halo_props:
         print('Calculating radii and masses...')
         for j in tqdm.tqdm(halo_id_list):
             i = self.number_mapper.number_to_index(j)
-            prop = self.dict[i]
+            # prop = self.dict[i]
             # t1 = time.time()
             MassRadii = cR.get_radius(self.new_catalogue[j], \
                     overdensities=list(rdict.values()), rho_crit=self.rho_crit, \
-                        prop=prop, precision=precision, cen=self.center[i], rmax=rmax)
+                        prop=None, precision=precision, cen=self.center[i], rmax=rmax)
             for key in rdict:
                 self.prop['R'][key][i] = MassRadii[1][rdict[key]]
                 self.prop['M'][key][i] = MassRadii[0][rdict[key]]
