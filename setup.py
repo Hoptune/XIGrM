@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(name = 'XIGrM',
-      version = '0.2',
+      version = '0.3',
       description = 'Analysis tools for the intragroup medium.',
       url = 'https://github.com/Hoptunes/XIGrM',
       author = 'Zhiwei Shao',
@@ -10,4 +10,6 @@ setup(name = 'XIGrM',
       license = '',
       packages = find_packages(),
       zip_safe = False,
-      install_requires = ['numpy', 'scipy', 'h5py', 'pynbody', 'tqdm', 'multiprocess', 'astropy', 'pyatomdb>=0.10.0'])
+      install_requires = ['numpy', 'scipy', 'h5py', 'pynbody>=2.0', 'tqdm',
+                          'multiprocess', 'astropy', 'pyatomdb>=0.10.0',
+                          'python>=3.10'])
