@@ -162,7 +162,8 @@ class halo_props:
             self.haloid = self.dict['halo_number']
 
             # Some hostHalo id will not be listed in ahfidname list, this is probably due to AHF algorithm
-            host_in_IDlist = np.isin(self.dict['hostHalo'], self.dict['halo_number'])
+            host_in_IDlist = (np.isin(self.dict['hostHalo'], self.dict['halo_number'])) | \
+                            self.dict['hostHalo'] == host_id_of_top_level
             in_idx, = np.where(host_in_IDlist)
             _not_in_ = np.invert(host_in_IDlist)
             not_in_idx, = np.nonzero(_not_in_)
