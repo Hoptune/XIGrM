@@ -111,7 +111,7 @@ class halo_props:
         halo_id of the halo identified as group in the catalogue.
     '''
     def __init__(self, halocatalogue, datatype, attrpath=None, field=default_field,
-            ahfidname="ID", field_units=default_units,
+            field_units=default_units,
             host_id_of_top_level=0, nthreads=1):
         '''
         Initialization routine.
@@ -123,8 +123,6 @@ class halo_props:
         field
             Quantities to calculate. When changing specific_mass_field, 
             luminosity_field and temp_field, source codes must be modified.
-        ahfidname
-            ID of the host halo that AHF generates.
         datatype : str
             What kind of simulation data you are dealing with. 
             Accepted datatype for now: 'gizmo_ahf' and 'tipsy_ahf'.
@@ -163,7 +161,7 @@ class halo_props:
 
             # Some hostHalo id will not be listed in ahfidname list, this is probably due to AHF algorithm
             host_in_IDlist = (np.isin(self.dict['hostHalo'], self.dict['halo_number'])) | \
-                            self.dict['hostHalo'] == host_id_of_top_level
+                            (self.dict['hostHalo'] == self.host_id_of_top_level)
             in_idx, = np.where(host_in_IDlist)
             _not_in_ = np.invert(host_in_IDlist)
             not_in_idx, = np.nonzero(_not_in_)
