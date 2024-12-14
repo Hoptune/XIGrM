@@ -148,6 +148,9 @@ class halo_props:
                                                             unit='Msol kpc**-3')
             self.ovdens = cosmology.Delta_vir(
                         self.catalogue_original[self.number_mapper.index_to_number(0)])
+            self.a_sim = self.catalogue_original[self.number_mapper.index_to_number(0)].properties['a']
+            self.h_sim = self.catalogue_original[self.number_mapper.index_to_number(0)].properties['h']
+            self.boxsize = self.catalogue_original[self.number_mapper.index_to_number(0)].properties['boxsize'].in_units('kpc')
             self.nthreads = nthreads
 
             halodicts = halocatalogue.get_properties_all_halos()
@@ -313,7 +316,7 @@ class halo_props:
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize'].in_units('kpc')
+                boxsize = self.boxsize
                 original_pos = halo['pos'].copy()
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
@@ -404,7 +407,7 @@ class halo_props:
 
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize'].in_units('kpc')
+                boxsize = self.boxsize
                 original_pos = halo['pos'].copy()
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
@@ -503,7 +506,7 @@ class halo_props:
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize'].in_units('kpc')
+                boxsize = self.boxsize
                 original_pos = halo['pos'].copy()
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
@@ -595,7 +598,7 @@ class halo_props:
             halo = self.new_catalogue[j]
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize'].in_units('kpc')
+                boxsize = self.boxsize
                 original_pos = halo['pos'].copy()
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
@@ -910,7 +913,7 @@ class halo_props:
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize'].in_units('kpc')
+                boxsize = self.boxsize
                 original_pos = halo['pos'].copy()
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
@@ -991,7 +994,7 @@ class halo_props:
             R = self.prop['R'][i:i+1][calcu_field].in_units('kpc')
             tx = pnb.transformation.inverse_translate(halo, center)
             with tx:
-                boxsize = halo.properties['boxsize'].in_units('kpc')
+                boxsize = self.boxsize
                 original_pos = halo['pos'].copy()
                 halo['pos'] = correct_pos(halo['pos'], boxsize)
 
@@ -1032,9 +1035,9 @@ class halo_props:
             for axis in axes:
                 tempcen[axis] = np.asarray(self.dict[axis], dtype=float).reshape(-1, 1)
             self.center = np.concatenate((tempcen['Xc'], tempcen['Yc'], tempcen['Zc']), axis=1)
-            self.center = pnb.array.SimArray(self.center, units='kpc') * self.dict['a'][0] / self.dict['h'][0]
+            self.center = pnb.array.SimArray(self.center, units='kpc') * self.a_sim / self.h_sim
             if self.datatype == 'tipsy_ahf':
-                self.center -= self.dict['boxsize'][0].in_units('kpc')/2
+                self.center -= self.boxsize.in_units('kpc')/2
         else:
             self.center = pnb.array.SimArray(np.zeros((self.length, 3)), units='kpc')
             if 'phi' in self.new_catalogue[self.number_mapper.index_to_number(0)].loadable_keys():
