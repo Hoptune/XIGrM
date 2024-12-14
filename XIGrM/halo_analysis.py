@@ -136,16 +136,19 @@ class halo_props:
         if attrpath is None:
             self.datatype=datatype
             self.catalogue_original = halocatalogue
+            self.number_mapper = halocatalogue.number_mapper
             self.length = len(self.catalogue_original)
             init_zeros = np.zeros(self.length)
             self.host_id_of_top_level = host_id_of_top_level
             self.errorlist = [{}, {}, {}]
             self.verbose = verbose
 
-            self.rho_crit = pnb.analysis.cosmology.rho_crit(f=self.catalogue_original[1], unit='Msol kpc**-3')
-            self.ovdens = cosmology.Delta_vir(self.catalogue_original[1])
+            self.rho_crit = pnb.analysis.cosmology.rho_crit(
+                f=self.catalogue_original[self.number_mapper.index_to_number(0)],
+                                                            unit='Msol kpc**-3')
+            self.ovdens = cosmology.Delta_vir(
+                        self.catalogue_original[self.number_mapper.index_to_number(0)])
             self.nthreads = nthreads
-            self.number_mapper = halocatalogue.number_mapper
 
             halodicts = halocatalogue.get_properties_all_halos()
             del halodicts['children'], halodicts['parent']
@@ -216,7 +219,7 @@ class halo_props:
             above which host halos are considered as groups.
         '''
         self.get_children()
-        self.get_new_catalogue(include_=include_sub)
+        self.get_new_catalogue(include_sub=include_sub)
         self.get_galaxy(g_low_limit=galaxy_low_limit, mode=galaxy_mode)
         self.get_group_list(N_galaxy)
         self.get_center()
@@ -718,7 +721,7 @@ class halo_props:
                 self.errorlist[1][j] = hostID
         self._have_children = True
     
-    def get_new_catalogue(self, include_):
+    def get_new_catalogue(self, include_sub):
         '''
         Generate a new catalogue based on catalogue_original, 
         the new catalogue will include all the subhalo particles 
@@ -726,13 +729,13 @@ class halo_props:
         
         Parameters
         -------------
-        include_ : bool
+        include_sub : bool
             If True, then will include all the subhalo particles. 
             Otherwise will just be a copy of catalogue_original.
         '''
         if not self._have_children:
             raise Exception('Must get_children first!')
-        if include_:
+        if include_sub:
             self.new_include_sub = True
             self.new_catalogue = {}
             k = 0
@@ -1024,7 +1027,7 @@ class halo_props:
                 self.center -= self.dict['boxsize'][0].in_units('kpc')/2
         else:
             self.center = pnb.array.SimArray(np.zeros((self.length, 3)), units='kpc')
-            if 'phi' in self.new_catalogue[1].loadable_keys():
+            if 'phi' in self.new_catalogue[self.number_mapper.index_to_number(0)].loadable_keys():
                 center_mode = 'pot'
             else:
                 center_mode = 'com'
