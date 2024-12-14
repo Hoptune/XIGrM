@@ -857,8 +857,8 @@ class halo_props:
         '''
         if not self._have_galaxy:
             raise Exception('Must get_galaxy first!')
-        self.group_list, = np.where(self.n_lgal >= N_galaxy)
-        self.group_list += 1
+        self.group_list = self.number_mapper.index_to_number(np.nonzero(self.n_lgal >= N_galaxy)[0])
+        # self.group_list += 1
         self._have_group = True
     
     def calcu_tx_lx(self, halo_id_list=[], \
