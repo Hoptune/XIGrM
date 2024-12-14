@@ -119,7 +119,7 @@ def calcu_luminosity(gas, filename, mode='total', elements=default_elements, ban
         emissivity = emission['cont'] + emission['line']
     emission_atomic_numbers = emission['atomic_numbers']
 
-    elements_idx = np.array([], dtype=np.int)
+    elements_idx = np.array([], dtype=int)
     for i in atomicNumbers:
         a_pos, = np.where(emission_atomic_numbers == i)
         if len(a_pos) == 0:

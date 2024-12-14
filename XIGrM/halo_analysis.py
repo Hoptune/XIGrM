@@ -151,7 +151,7 @@ class halo_props:
             self.boxsize = self.catalogue_original[self.number_mapper.index_to_number(0)].properties['boxsize'].in_units('kpc')
             self.nthreads = nthreads
 
-            halodicts = halocatalogue.get_properties_all_halos()
+            halodicts = halocatalogue.get_properties_all_halos().copy()
             del halodicts['children'], halodicts['parent']
             halodicts = Table(halodicts)
             halodicts['halo_number'] = self.number_mapper.index_to_number(np.arange(len(halocatalogue)))
