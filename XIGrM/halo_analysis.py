@@ -148,6 +148,7 @@ class halo_props:
                         self.catalogue_original[self.number_mapper.index_to_number(0)])
             self.a_sim = self.catalogue_original[self.number_mapper.index_to_number(0)].properties['a']
             self.h_sim = self.catalogue_original[self.number_mapper.index_to_number(0)].properties['h']
+            self.z_sim = self.catalogue_original[self.number_mapper.index_to_number(0)].properties['z']
             self.boxsize = self.catalogue_original[self.number_mapper.index_to_number(0)].properties['boxsize'].in_units('kpc')
             self.nthreads = nthreads
 
@@ -155,7 +156,10 @@ class halo_props:
             del halodicts['children'], halodicts['parent']
             halodicts = Table(halodicts)
             halodicts['halo_number'] = self.number_mapper.index_to_number(np.arange(len(halocatalogue)))
-
+            halodicts['boxsize'] = self.boxsize
+            halodicts.add_column(self.z_sim, name='z')
+            halodicts.add_column(self.a_sim, name='a')
+            halodicts.add_column(self.h_sim, name='h')
             self.dict = halodicts
             self.haloid = self.dict['halo_number']
 
