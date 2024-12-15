@@ -98,8 +98,8 @@ def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
 
     for i in range(len(overdensities)):
         if i > 0: # Continue calculating based on the last result.
-            radius= radii[overdensities[i-1]]
-            mass = masses[overdensities[i-1]]
+            radius= radii[overdensities[i-1]].view(np.ndarray)
+            mass = masses[overdensities[i-1]].view(np.ndarray)
         density = densities[i]
         while True:
             temp_radius = radius
