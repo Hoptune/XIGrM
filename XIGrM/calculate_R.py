@@ -69,13 +69,13 @@ def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
     else:
         center = cen.in_units('kpc')
     #if prop['mass'] > 1e12: # For massive halos which spend most of time loading particle information, use numpy.
-    halopos = halo['pos'].in_units('kpc').view(np.ndarray) - center
+    halopos = halo['pos'].in_units('kpc').view(np.ndarray) - center.view(np.ndarray)
     halomass = halo['mass'].in_units('Msol').view(np.ndarray)
    
     for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
-        index1, = np.where(halopos[:, i] < -boxsize/2)
+        index1, = np.nonzero(halopos[:, i] < -boxsize/2)
         halopos[index1, i] += boxsize
-        index2, = np.where(halopos[:, i] > boxsize/2)
+        index2, = np.nonzero(halopos[:, i] > boxsize/2)
         halopos[index2, i] -= boxsize
     halor = np.linalg.norm(halopos, axis=1)
     radius = 2 * halor.max()
@@ -84,7 +84,7 @@ def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
         rho_crit = pnb.analysis.cosmology.rho_crit(halo, z=prop["z"], unit='Msol kpc**-3')
     if rmax != None:
         radius  = rmax
-        particles_within_r, = np.where(halor <= radius)
+        particles_within_r, = np.nonzero(halor <= radius)
         _halomass = halomass[particles_within_r]
         mass = _halomass.sum()
     overdensities = np.array(overdensities)
@@ -106,7 +106,7 @@ def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
             radius = ((3 / (4 * np.pi)) * mass / density)**(1/3)
 #                 temphalo = temphalo[pnb.filt.Sphere(radius)]
 #                 mass = temphalo['mass'].sum()
-            particles_within_r, = np.where(halor <= radius)
+            particles_within_r, = np.nonzero(halor <= radius)
             halor = halor[particles_within_r]
             halomass = halomass[particles_within_r]
             mass = halomass.sum()
