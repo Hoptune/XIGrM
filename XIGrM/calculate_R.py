@@ -9,7 +9,7 @@ import numpy as np
 import pynbody as pnb
 
 def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
-        precision=1e-2, rmax=None, cen=np.array([]), prop=None):
+        precision=1e-2, rmax=None, cen=np.array([]), prop=None, ncpu=1):
     """
     Calculate different radii of a given halo with a decreasing sphere method.
 
@@ -65,12 +65,13 @@ def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
     # All positions in prop are in comoving coordinates.
     boxsize = prop['boxsize'].in_units('kpc')
     if len(cen) == 0:
-        center = pnb.analysis.halo.center(halo, mode='pot', retcen=True, vel=False)
+        center = pnb.analysis.halo.center(halo, mode='pot', return_cen=True, with_velocity=False).in_units('kpc')
     else:
         center = cen.in_units('kpc')
     #if prop['mass'] > 1e12: # For massive halos which spend most of time loading particle information, use numpy.
-    halopos = halo['pos'].in_units('kpc').view(np.ndarray) - center.view(np.ndarray)
-    halomass = halo['mass'].in_units('Msol').view(np.ndarray)
+    with halo.immediate_mode:
+        halopos = halo['pos'].in_units('kpc').view(np.ndarray) - center.view(np.ndarray)
+        halomass = halo['mass'].in_units('Msol').view(np.ndarray)
    
     for i in range(3): # Correct the position of patricles crossing the box periodical boundary.
         index1, = np.nonzero(halopos[:, i] < -boxsize/2)
@@ -104,16 +105,14 @@ def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
         while True:
             temp_radius = radius
             radius = ((3 / (4 * np.pi)) * mass / density)**(1/3)
-#                 temphalo = temphalo[pnb.filt.Sphere(radius)]
-#                 mass = temphalo['mass'].sum()
             particles_within_r, = np.nonzero(halor <= radius)
             halor = halor[particles_within_r]
             halomass = halomass[particles_within_r]
             mass = halomass.sum()
             radial_difference = np.abs(temp_radius - radius) / radius
             if mass == 0:
-                radii[overdensities[i]] = 0
-                masses[overdensities[i]] = 0
+                radii[overdensities[i]] = pnb.array.SimArray(.0 ,units='kpc')
+                masses[overdensities[i]] = pnb.array.SimArray(.0 ,units='Msol')
                 break
             if radial_difference <= precision:
                 radii[overdensities[i]] = pnb.array.SimArray(radius)
@@ -121,47 +120,6 @@ def get_radius(halo, overdensities = np.array([]), rho_crit=None, \
                 radii[overdensities[i]].units = 'kpc'
                 masses[overdensities[i]].units = 'Msol'
                 break
-#     else: # For small halos, pynbody built-in function is faster.
-#         tx = pnb.transformation.inverse_translate(halo, center)
-#         with tx:
-#             x = halo['x']
-#             radius = x.max() - x.min()
-#             mass = halo['mass'].sum()
-#             lunits = radius.units
-#             munits = mass.units
-#             if rho_crit == 0:
-#                 rho_crit = pnb.analysis.cosmology.rho_crit(halo, z=prop["z"], unit=munits/lunits**3)
-#             if rmax != 0:
-#                 radius  = rmax.in_units(lunits)
-#                 mass = halo[pnb.filt.Sphere(radius)]['mass'].sum()
-#             overdensities = np.array(overdensities)
-#             if len(overdensities) > 1:
-#                 overdensities.sort() # From low density to high density
-#             densities = pnb.array.SimArray(overdensities * rho_crit)
-#             densities.units = munits/lunits**3
-#             temphalo = halo
-#             masses = {}
-#             radii = {}
-#             for i in range(len(overdensities)):
-#                 if i > 0: # Continue calculating based on the last result.
-#                     radius= radii[overdensities[i-1]]
-#                     mass = masses[overdensities[i-1]]
-#                 density = densities[i]
-#                 while True:
-#                     temp_radius = radius
-#                     radius = ((3 / (4 * np.pi)) * mass / density)**(1/3)
-#                     temphalo = temphalo[pnb.filt.Sphere(radius)]
-#                     mass = temphalo['mass'].sum()
-#                     radial_difference = np.abs(temp_radius - radius) / temp_radius
-#                     if mass == 0:
-#                         radii[overdensities[i]] = 0
-#                         masses[overdensities[i]] = 0
-#                         break
-#                     if radial_difference <= precision:
-#                         radius.units=lunits
-#                         radii[overdensities[i]] = radius
-#                         masses[overdensities[i]] = mass
-#                         break
     return  masses, radii
     #densities.units = halo.dm[0]['mass'].units/halo.dm['pos'].units**3
 

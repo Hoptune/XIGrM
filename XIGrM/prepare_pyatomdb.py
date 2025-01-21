@@ -16,6 +16,7 @@ from astropy import units as astrou
 from astropy import constants as astroc
 import time
 import h5py
+from scipy.spatial import KDTree
 import os
 
 def elsymbs_to_z0s(elements): # Get atomic numbers for given element lists.
@@ -212,50 +213,51 @@ def calculate_line_emission(energy_bins, specific_elements = atomicNumbers, retu
         return {'CoolingRate':line_emission * erg_per_kev}
 
 def get_index(te, teunits='K', logscale=False):
-	"""
-	Finds indexes in the calculated table with kT closest ro desired kT.
+    """
+    Finds indexes in the calculated table with kT closest ro desired kT.
 
-	Parameters
-	----------
-	te : numpy.ndarray
-		Temperatures in keV or K
-	teunits : {'keV' , 'K'}
-		Units of te (kev or K, default keV)
-	logscale : bool
-		Search on a log scale for nearest temperature if set.
+    Parameters
+    ----------
+    te : numpy.ndarray
+        Temperatures in keV or K
+    teunits : {'keV' , 'K'}
+        Units of te (kev or K, default keV)
+    logscale : bool
+        Search on a log scale for nearest temperature if set.
 
-	Returns
-	-------
-	numpy.adarray
-		Indexes in the Temperature list.
-	"""
+    Returns
+    -------
+    numpy.adarray
+        Indexes in the Temperature list.
 
-	#  History
-	#  -------
-	#  Version 0.1 - initial release
-	#    Adam Foster July 17th 2015
-	#
-	#
-	#  Version 0.2 - fixed bug so teunits = l works properly
-	#    Adam Foster Jan 26th 2016
-	#
-	#
-	#  Version 0.3 - allow array as input
-	#    Zhiwei Shao July 20 2019
+    #  History
+    #  -------
+    #  Version 0.1 - initial release
+    #    Adam Foster July 17th 2015
+    #
+    #
+    #  Version 0.2 - fixed bug so teunits = l works properly
+    #    Adam Foster Jan 26th 2016
+    #
+    #
+    #  Version 0.3 - allow array as input and use KDTree to boost calculations
+    #    Zhiwei Shao July 20 2019
+    """
 
-	if teunits.lower() == 'k':
-		teval = te.reshape(-1,1) # For convenience of broadcasting
-	elif teunits.lower() == 'kev':
-		teval = ((te*astrou.keV/astroc.k_B).to('K')).value.reshape(-1,1)
-	else:
-		print("*** ERROR: unknown temeprature unit %s. Must be keV or K. Exiting ***"%\
-			(teunits))
-
-	if logscale:
-		i = np.argmin(np.abs(np.log(line_cut)-np.log(teval)), axis=1)
-	else:
-		i = np.argmin(np.abs(line_cut-teval), axis=1)
-	return i
+    if teunits.lower() == 'k':
+        teval = te.reshape(-1,1) # For convenience of KDTree
+    elif teunits.lower() == 'kev':
+        teval = ((te*astrou.keV/astroc.k_B).to('K')).value.reshape(-1,1)
+    else:
+        print(f"*** ERROR: unknown temeprature unit {teunits}. Must be keV or K. Exiting ***")
+            
+    if logscale:
+        line_cut_tree = KDTree(np.log10(line_cut).reshape(-1, 1), leafsize=1)
+        _, i = line_cut_tree.query(np.log10(teval), workers=-1)
+    else:
+        line_cut_tree = KDTree(line_cut.reshape(-1, 1), leafsize=1)
+        _, i = line_cut_tree.query(teval, workers=-1)
+    return i
 
 def get_atomic_masses(atomic_numbers):
     '''
